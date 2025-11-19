@@ -7,10 +7,10 @@ const LoginPage: React.FC = () => {
     const style = {display: "block", margin: "10px"};
     const handleLogin = (e: React.FormEvent) => {
             e.preventDefault();
-            axios.post("http://127.0.0.1:8000/api/login/", {
+            axios.post("http://127.0.0.1:8000/api/login", {
                 email, password })
             .then((response) => {
-                if(response.data[0] === "Authentification réussie") {
+                if(response.data.message === "Authentification réussie") {
                     console.log("Login successful");
                 }else{
                     console.log("Login failed");
