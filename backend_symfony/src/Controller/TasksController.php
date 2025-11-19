@@ -7,6 +7,7 @@ use App\Repository\TasksRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class TasksController extends AbstractController
 {
@@ -19,7 +20,8 @@ final class TasksController extends AbstractController
         ]);
     }
 
-    #[Route('/api/tasks', name: 'tasks_list', methods: ['GET'])]
+    #[Route('/api/tasks/all', name: 'tasks_list', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     public function list(TasksRepository $tasksRepository): JsonResponse
     {
         $tasks = $tasksRepository->findAll();

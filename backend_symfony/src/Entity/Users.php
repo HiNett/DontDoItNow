@@ -7,9 +7,11 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UsersRepository::class)]
-class Users
+class Users implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -80,16 +82,38 @@ class Users
         return $this;
     }
 
-    public function getRole(): ?int
-    {
-        return $this->role;
-    }
-
     public function setRole(int $role): static
     {
         $this->role = $role;
 
         return $this;
+    }
+
+    /**
+     * Retourne les rôles de l'utilisateur sous forme de tableau
+     * Convertit le champ role (int) en rôles Symfony
+     * 
+     * @return string[]
+     */
+    public function getRoles(): array
+    {
+        $roles = ['ROLE_USER'];
+        
+        if ($this->role === 1) {
+            $roles[] = 'ROLE_ADMIN';
+        }
+        
+        return array_unique($roles);
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->Email;
+    }
+
+    /** Obligatoire sinon Symfony fait son caca nerveux, pas vrai Grégoire ? */
+    public function eraseCredentials(): void
+    {
     }
 
     /**

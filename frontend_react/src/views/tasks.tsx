@@ -8,7 +8,7 @@ type Task = {
   isArchived: boolean;
 };
 
-const tasks: React.FC = () => {
+const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,4 +61,4 @@ const tasks: React.FC = () => {
   );
 };
 
-export default tasks;
+export default Tasks;

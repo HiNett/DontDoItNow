@@ -1,13 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './views/login';
-
+import Tasks from './views/tasks';
 
 const App: React.FC = () => {
   return (
-    <div style={{ margin: '50px', marginTop:'0px', fontFamily: 'sans-serif' }}>
-      <h1>Accueil</h1>
-        <Login />
-    </div>
+    <BrowserRouter>
+      <div style={{ padding: '1rem', fontFamily: 'sans-serif' }}>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/tasks" element={<Tasks />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 };
 
