@@ -1,8 +1,11 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
   text-align: center;
+}
+div#root{
+  width: -webkit-fill-available;
+  height: -webkit-fill-available;
 }
 
 .logo {
