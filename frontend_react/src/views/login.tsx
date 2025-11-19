@@ -10,7 +10,11 @@ const LoginPage: React.FC = () => {
             axios.post("http://127.0.0.1:8000/api/login/", {
                 email, password })
             .then((response) => {
-                console.log(response.data)
+                if(response.data[0] === "Authentification réussie") {
+                    console.log("Login successful");
+                }else{
+                    console.log("Login failed");
+                }
             })
             .catch((error) => {
                 console.log(error.message);
@@ -18,7 +22,7 @@ const LoginPage: React.FC = () => {
         )
     }
    return (
-        <div>
+        <div style={{ display: "block", marginLeft: "auto", marginRight: "auto", width: "500px"}}>
             <h1>Login</h1>
             <input type="text"  value={email} style={style} placeholder="email"  onChange={(e) => setEmail(e.target.value)} />
             <input type="password" value={password} style={style} placeholder="Password"  onChange={(e) => setPassword(e.target.value)} />
