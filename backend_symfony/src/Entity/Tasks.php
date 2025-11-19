@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TasksRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -35,6 +37,20 @@ class Tasks
 
     #[ORM\OneToOne(mappedBy: 'tasks', cascade: ['persist', 'remove'])]
     private ?UsersTasks $usersTasks = null;
+
+    /**
+     * @var Collection<int, TaskHistory>
+     */
+    #[ORM\OneToMany(targetEntity: TaskHistory::class, mappedBy: 'taskId', orphanRemoval: true)]
+    private Collection $taskHistories;
+
+    #[ORM\Column]
+    private ?bool $isArchived = null;
+
+    public function __construct()
+    {
+        $this->taskHistories = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -126,6 +142,48 @@ class Tasks
         }
 
         $this->usersTasks = $usersTasks;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TaskHistory>
+     */
+    public function getTaskHistories(): Collection
+    {
+        return $this->taskHistories;
+    }
+
+    public function addTaskHistory(TaskHistory $taskHistory): static
+    {
+        if (!$this->taskHistories->contains($taskHistory)) {
+            $this->taskHistories->add($taskHistory);
+            $taskHistory->setTaskId($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTaskHistory(TaskHistory $taskHistory): static
+    {
+        if ($this->taskHistories->removeElement($taskHistory)) {
+            // set the owning side to null (unless already changed)
+            if ($taskHistory->getTaskId() === $this) {
+                $taskHistory->setTaskId(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function isArchived(): ?bool
+    {
+        return $this->isArchived;
+    }
+
+    public function setIsArchived(bool $isArchived): static
+    {
+        $this->isArchived = $isArchived;
 
         return $this;
     }
