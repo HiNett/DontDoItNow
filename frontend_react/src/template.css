@@ -16,6 +16,11 @@
   font-size: 1.4rem;
   border-bottom: 1px solid #555;
 }
+.nav a {
+  color: white;
+  margin: 0 15px;
+  text-decoration: none;
+}
 
 .layout-container {
   flex: 1;

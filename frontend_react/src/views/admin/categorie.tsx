@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-type Task = {
+type Categorie = {
   id: number;
   name: string;
   description: string | null;
@@ -8,15 +8,15 @@ type Task = {
   isArchived: boolean;
 };
 
-const Tasks: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+const Categorie: React.FC = () => {
+  const [categorie, setCategorie] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingCategorie, setEditingCategorie] = useState<Categorie | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', dueDate: '', isArchived: false });
 
-  const fetchTasks = () => {
+  const fetchCategorie = () => {
     const token = localStorage.getItem('authToken');
     
     if (!token) {
@@ -25,7 +25,7 @@ const Tasks: React.FC = () => {
       return;
     }
 
-    fetch('http://127.0.0.1:8000/api/tasks/all', {
+    fetch('http://127.0.0.1:8000/api/categorie/all', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -41,16 +41,16 @@ const Tasks: React.FC = () => {
           const text = await res.text();
           try {
             const errorData = JSON.parse(text);
-            throw new Error(errorData?.message || errorData?.error || `HTTP ${res.status}: Failed to fetch tasks`);
+            throw new Error(errorData?.message || errorData?.error || `HTTP ${res.status}: Failed to fetch categorie`);
           } catch (e) {
-            throw new Error(`HTTP ${res.status}: ${text || 'Failed to fetch tasks'}`);
+            throw new Error(`HTTP ${res.status}: ${text || 'Failed to fetch categorie'}`);
           }
         }
         return res.json();
       })
       .then((data) => {
-        console.log('Tasks loaded:', data);
-        setTasks(data);
+        console.log('Categorie loaded:', data);
+        setCategorie(data);
         setLoading(false);
       })
       .catch((err) => {
@@ -61,28 +61,28 @@ const Tasks: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchTasks();
+    fetchCategorie();
   }, []);
 
-  const openEditModal = (task: Task) => {
-    setEditingTask(task);
+  const openEditModal = (categorie: Categorie) => {
+    setEditingCategorie(categorie);
     setFormData({
-      name: task.name,
-      description: task.description || '',
-      dueDate: task.dueDate ? task.dueDate.substring(0, 16) : '',
-      isArchived: task.isArchived
+      name: categorie.name,
+      description: categorie.description || '',
+      dueDate: categorie.dueDate ? categorie.dueDate.substring(0, 16) : '',
+      isArchived: categorie.isArchived
     });
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
-    setEditingTask(null);
+    setEditingCategorie(null);
     setFormData({ name: '', description: '', dueDate: '', isArchived: false });
   };
 
-  const handleUpdateTask = async () => {
-    if (!editingTask) return;
+  const handleUpdateCategorie = async () => {
+    if (!editingCategorie) return;
 
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -91,7 +91,7 @@ const Tasks: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/tasks/${editingTask.id}`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/categorie/${editingCategorie.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -112,17 +112,17 @@ const Tasks: React.FC = () => {
       }
 
       const result = await response.json();
-      console.log('Task updated:', result);
+      console.log('Categorie updated:', result);
       
       closeModal();
-      fetchTasks(); // Recharger la liste des tâches
+      fetchCategorie(); // Recharger la liste des tâches
     } catch (err: any) {
       console.error('Update error:', err);
       alert(err.message || 'Erreur lors de la mise à jour');
     }
   };
 
-  const handleDeleteTask = async (taskId: number) => {
+  const handleDeleteCategorie = async (categorieId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
       return;
     }
@@ -134,7 +134,7 @@ const Tasks: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/apiS/tasks/${taskId}`, {
+      const response = await fetch(`http://127.0.0.1:8000/apiS/categorie/${categorieId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -147,8 +147,8 @@ const Tasks: React.FC = () => {
         throw new Error(errorData.error || 'Erreur lors de la suppression');
       }
 
-      console.log('Task deleted');
-      fetchTasks(); // Recharger la liste des tâches
+      console.log('Categorie deleted');
+      fetchCategorie(); // Recharger la liste des tâches
     } catch (err: any) {
       console.error('Delete error:', err);
       alert(err.message || 'Erreur lors de la suppression');
@@ -163,30 +163,30 @@ const Tasks: React.FC = () => {
     <div>
       <nav className="nav">
         <a href="/admin/dashboard">Dashboard</a>
-        <a href="/admin/tasks">Tasks</a>
+        <a href="/admin/tasks"> Tasks</a>
         <a href="/admin/users">Users</a>
         <a href="/admin/categorie">Categories</a>
       </nav>
       <div className="container">
-        <h1>Tasks</h1>
-        {tasks.length === 0 ? (
+        <h1>Categorie</h1>
+        {categorie.length === 0 ? (
           <div>Pas de taches trouvées.</div>
         ) : (
           <table>
-            {tasks.map((task) => (
-              <tr key={task.id} style={{ marginBottom: '1rem' }}>
-                <td><strong>{task.name}</strong></td>
-                <td>{task.description || <em>No description</em>}</td>
+            {categorie.map((categorie) => (
+              <tr key={categorie.id} style={{ marginBottom: '1rem' }}>
+                <td><strong>{categorie.name}</strong></td>
+                <td>{categorie.description || <em>No description</em>}</td>
                 <td>
                   Due Date:{' '}
-                  {task.dueDate
-                    ? new Date(task.dueDate).toLocaleString()
+                  {categorie.dueDate
+                    ? new Date(categorie.dueDate).toLocaleString()
                     : <em>None</em>}
                 </td>
-                <td>Archived: {task.isArchived ? 'Yes' : 'No'}</td>
+                <td>Archived: {categorie.isArchived ? 'Yes' : 'No'}</td>
                 <td>
                   <button 
-                    onClick={() => openEditModal(task)}
+                    onClick={() => openEditModal(categorie)}
                     style={{ cursor: 'pointer' }}
                   >
                     Update
@@ -194,7 +194,7 @@ const Tasks: React.FC = () => {
                 </td>
                 <td>
                   <button 
-                    onClick={() => handleDeleteTask(task.id)}
+                    onClick={() => handleDeleteCategorie(categorie.id)}
                     style={{ cursor: 'pointer' }}
                   >
                     Delete
@@ -208,7 +208,7 @@ const Tasks: React.FC = () => {
       </div>
 
       {/* Modal pour éditer une tâche */}
-      {showModal && editingTask && (
+      {showModal && editingCategorie && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -308,7 +308,7 @@ const Tasks: React.FC = () => {
                 Cancel
               </button>
               <button
-                onClick={handleUpdateTask}
+                onClick={handleUpdateCategorie}
                 style={{
                   padding: '10px 20px',
                   border: 'none',
@@ -328,4 +328,4 @@ const Tasks: React.FC = () => {
   );
 };
 
-export default Tasks;
+export default Categorie;

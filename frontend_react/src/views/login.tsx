@@ -6,13 +6,14 @@ import "../template.css";
 const LoginPage: React.FC = () => {
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
+    const [rememberMe, setRememberMe] = useState<boolean>(false);
     const navigate = useNavigate();
     const style = { display: "block", margin: "10px" };
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         axios.post("http://127.0.0.1:8000/api/login", {
-            email, password
+            email, password, rememberMe
         }, {
             withCredentials: true
         })
@@ -64,6 +65,15 @@ const LoginPage: React.FC = () => {
                     placeholder="Password"
                     onChange={(e) => setPassword(e.target.value)}
                 />
+                <div>
+                    <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                    <label>Se souvenir de moi</label>
+
+                </div>
                 <button type="submit" onClick={handleLogin}>
                     Envoyer
                 </button>
