@@ -12,11 +12,12 @@ const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [formData, setFormData] = useState({ name: '', description: '', dueDate: '', isArchived: false });
 
-  useEffect(() => {
+  const fetchTasks = () => {
     const token = localStorage.getItem('authToken');
-    
-    console.log("Token from localStorage:", token ? token.substring(0, 50) + "..." : "NO TOKEN");
     
     if (!token) {
       setError('Non authentifié. Veuillez vous connecter.');
@@ -32,18 +33,12 @@ const Tasks: React.FC = () => {
       credentials: 'include',
     })
       .then(async (res) => {
-        console.log('Response status:', res.status);
-        console.log('Response ok:', res.ok);
-        console.log('Response headers:', res.headers);
-        
         if (!res.ok) {
           if (res.status === 401) {
             localStorage.removeItem('authToken');
             throw new Error('Session expirée. Veuillez vous reconnecter.');
           }
-          // En cas d'erreur, j'ai rajouté ces lignes, au moins on a la réponse complète du serveur (bon en HTML, mais c'est déjà mieux que rien)
           const text = await res.text();
-          console.error('Error response (text):', text);
           try {
             const errorData = JSON.parse(text);
             throw new Error(errorData?.message || errorData?.error || `HTTP ${res.status}: Failed to fetch tasks`);
@@ -63,21 +58,107 @@ const Tasks: React.FC = () => {
         setError(err.message || 'Unknown error');
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchTasks();
   }, []);
+
+  const openEditModal = (task: Task) => {
+    setEditingTask(task);
+    setFormData({
+      name: task.name,
+      description: task.description || '',
+      dueDate: task.dueDate ? task.dueDate.substring(0, 16) : '',
+      isArchived: task.isArchived
+    });
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingTask(null);
+    setFormData({ name: '', description: '', dueDate: '', isArchived: false });
+  };
+
+  const handleUpdateTask = async () => {
+    if (!editingTask) return;
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      alert('Non authentifié');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/tasks/${editingTask.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description || null,
+          dueDate: formData.dueDate || null,
+          isArchived: formData.isArchived
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la mise à jour');
+      }
+
+      const result = await response.json();
+      console.log('Task updated:', result);
+      
+      closeModal();
+      fetchTasks(); // Recharger la liste des tâches
+    } catch (err: any) {
+      console.error('Update error:', err);
+      alert(err.message || 'Erreur lors de la mise à jour');
+    }
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
+      return;
+    }
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      alert('Non authentifié');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la suppression');
+      }
+
+      console.log('Task deleted');
+      fetchTasks(); // Recharger la liste des tâches
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      alert(err.message || 'Erreur lors de la suppression');
+    }
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
 
   return (
-<<<<<<< Updated upstream
-    <div style={{ padding: '1rem', fontFamily: 'sans-serif' }}>
-      <h1>Tasks</h1>
-      {tasks.length === 0 ? (
-        <div>Pas de taches trouvées.</div>
-      ) : (
-        <table>
-          <tbody>
-=======
     
     <div>
       <nav className="nav">nav</nav>
@@ -87,7 +168,6 @@ const Tasks: React.FC = () => {
           <div>Pas de taches trouvées.</div>
         ) : (
           <table>
->>>>>>> Stashed changes
             {tasks.map((task) => (
               <tr key={task.id} style={{ marginBottom: '1rem' }}>
                 <td><strong>{task.name}</strong></td>
@@ -99,21 +179,146 @@ const Tasks: React.FC = () => {
                     : <em>None</em>}
                 </td>
                 <td>Archived: {task.isArchived ? 'Yes' : 'No'}</td>
-<<<<<<< Updated upstream
-              </tr>
-            ))}
-          </tbody>
-        </table>
-=======
-                <td><a href={`update/${task.id}`}>Update</a></td>
-                <td><a href={`delete/${task.id}`}>Delete</a></td>
+                <td>
+                  <button 
+                    onClick={() => openEditModal(task)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    Update
+                  </button>
+                </td>
+                <td>
+                  <button 
+                    onClick={() => handleDeleteTask(task.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </table>
->>>>>>> Stashed changes
 
         )}
       </div>
+
+      {/* Modal pour éditer une tâche */}
+      {showModal && editingTask && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '30px',
+            borderRadius: '8px',
+            minWidth: '400px',
+            maxWidth: '600px'
+          }}>
+            <h2 style={{ color: 'black' }}>Modifier la tâche</h2>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+                Nom de la tâche *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+                Date d'échéance
+              </label>
+              <input
+                type="datetime-local"
+                value={formData.dueDate}
+                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={formData.isArchived}
+                  onChange={(e) => setFormData({ ...formData, isArchived: e.target.checked })}
+                  style={{ marginRight: '8px' }}
+                />
+                <span style={{ color: 'black' }}>Archiver cette tâche</span>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={closeModal}
+                style={{
+                  padding: '10px 20px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  backgroundColor: 'white',
+                  cursor: 'pointer',
+                  color: 'black'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateTask}
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,10 +3,15 @@
 namespace App\Controller;
 
 use App\Entity\Tasks as TaskEntity;
+use App\Entity\TaskHistory;
+use App\Entity\UsersTasks;
 use App\Repository\TasksRepository;
 use App\Repository\UsersTasksRepository;
+use App\Repository\TaskStatusRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -72,5 +77,349 @@ final class TasksController extends AbstractController
         }, $tasks);
 
         return $this->json($data);
+    }
+
+    #[Route('/api/tasks', name: 'tasks_create', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function create(
+        Request $request,
+        EntityManagerInterface $em,
+        TaskStatusRepository $taskStatusRepository
+    ): JsonResponse {
+        try {
+            $user = $this->getUser();
+            
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur non authentifié'], 401);
+            }
+
+            $data = json_decode($request->getContent(), true);
+
+            if (!isset($data['name']) || empty(trim($data['name']))) {
+                return $this->json(['error' => 'Le nom de la tâche est requis'], 400);
+            }
+
+            // Créer la nouvelle tâche
+            $task = new TaskEntity();
+            $task->setName(trim($data['name']));
+            $task->setDescription($data['description'] ?? null);
+            $task->setIsArchived($data['isArchived'] ?? false);
+
+            // Gérer la date d'échéance
+            if (isset($data['dueDate']) && !empty($data['dueDate'])) {
+                try {
+                    $dueDate = new \DateTime($data['dueDate']);
+                    $task->setDueDate($dueDate);
+                } catch (\Exception $e) {
+                    return $this->json(['error' => 'Format de date invalide'], 400);
+                }
+            }
+
+            // Récupérer le statut par défaut (ou créer si nécessaire)
+            $status = $taskStatusRepository->findOneBy(['name' => 'En cours']) 
+                ?? $taskStatusRepository->findOneBy([])
+                ?? null;
+
+            if (!$status) {
+                return $this->json(['error' => 'Aucun statut de tâche disponible'], 500);
+            }
+
+            $task->setStatus($status);
+
+            // Créer la relation UsersTasks
+            $userTask = new UsersTasks();
+            $userTask->setUser($user);
+            $userTask->setTasks($task);
+
+            $em->persist($task);
+            $em->persist($userTask);
+            $em->flush();
+
+            return $this->json([
+                'message' => 'Tâche créée avec succès',
+                'task' => [
+                    'id' => $task->getId(),
+                    'name' => $task->getName(),
+                    'description' => $task->getDescription(),
+                    'dueDate' => $task->getDueDate()?->format(DATE_ATOM),
+                    'isArchived' => $task->isArchived(),
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            error_log("Error creating task: " . $e->getMessage());
+            return $this->json([
+                'error' => 'Erreur lors de la création de la tâche',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[Route('/api/tasks/{id}', name: 'tasks_update', methods: ['PUT', 'PATCH'])]
+    #[IsGranted('ROLE_USER')]
+    public function update(
+        int $id,
+        Request $request,
+        TasksRepository $tasksRepository,
+        UsersTasksRepository $usersTasksRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        try {
+            $user = $this->getUser();
+            
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur non authentifié'], 401);
+            }
+
+            // Récupérer la tâche
+            $task = $tasksRepository->find($id);
+
+            if (!$task) {
+                return $this->json(['error' => 'Tâche non trouvée'], 404);
+            }
+
+            // Vérifier que la tâche appartient à l'utilisateur
+            $userTask = $usersTasksRepository->findOneBy([
+                'tasks' => $task,
+                'user' => $user
+            ]);
+
+            if (!$userTask) {
+                return $this->json(['error' => 'Accès refusé à cette tâche'], 403);
+            }
+
+            // Sauvegarder les anciennes valeurs pour l'historique
+            $oldValues = [
+                'name' => $task->getName(),
+                'description' => $task->getDescription(),
+                'dueDate' => $task->getDueDate()?->format(DATE_ATOM),
+                'isArchived' => $task->isArchived(),
+            ];
+
+            // Mettre à jour les champs
+            $data = json_decode($request->getContent(), true);
+            $changes = [];
+
+            if (isset($data['name']) && !empty(trim($data['name']))) {
+                $newName = trim($data['name']);
+                if ($newName !== $task->getName()) {
+                    $changes['name'] = [
+                        'old' => $task->getName(),
+                        'new' => $newName
+                    ];
+                    $task->setName($newName);
+                }
+            }
+
+            if (isset($data['description'])) {
+                $newDescription = $data['description'];
+                if ($newDescription !== $task->getDescription()) {
+                    $changes['description'] = [
+                        'old' => $task->getDescription(),
+                        'new' => $newDescription
+                    ];
+                    $task->setDescription($newDescription);
+                }
+            }
+
+            if (isset($data['isArchived'])) {
+                $newIsArchived = (bool) $data['isArchived'];
+                if ($newIsArchived !== $task->isArchived()) {
+                    $changes['isArchived'] = [
+                        'old' => $task->isArchived(),
+                        'new' => $newIsArchived
+                    ];
+                    $task->setIsArchived($newIsArchived);
+                }
+            }
+
+            if (isset($data['dueDate'])) {
+                if (!empty($data['dueDate'])) {
+                    try {
+                        $dueDate = new \DateTime($data['dueDate']);
+                        $oldDueDate = $task->getDueDate()?->format(DATE_ATOM);
+                        $newDueDate = $dueDate->format(DATE_ATOM);
+                        
+                        if ($oldDueDate !== $newDueDate) {
+                            $changes['dueDate'] = [
+                                'old' => $oldDueDate,
+                                'new' => $newDueDate
+                            ];
+                            $task->setDueDate($dueDate);
+                        }
+                    } catch (\Exception $e) {
+                        return $this->json(['error' => 'Format de date invalide'], 400);
+                    }
+                } else {
+                    if ($task->getDueDate() !== null) {
+                        $changes['dueDate'] = [
+                            'old' => $task->getDueDate()->format(DATE_ATOM),
+                            'new' => null
+                        ];
+                        $task->setDueDate(null);
+                    }
+                }
+            }
+
+            // Créer un enregistrement dans l'historique si des changements ont été effectués
+            if (!empty($changes)) {
+                $taskHistory = new TaskHistory();
+                $taskHistory->setTaskId($task);
+                $taskHistory->setEditDate(new \DateTime());
+                $taskHistory->setEditChanges($changes);
+                
+                $em->persist($taskHistory);
+                
+                error_log("Task history created for task #" . $task->getId() . " with changes: " . json_encode($changes));
+            }
+
+            $em->flush();
+
+            return $this->json([
+                'message' => 'Tâche mise à jour avec succès',
+                'task' => [
+                    'id' => $task->getId(),
+                    'name' => $task->getName(),
+                    'description' => $task->getDescription(),
+                    'dueDate' => $task->getDueDate()?->format(DATE_ATOM),
+                    'isArchived' => $task->isArchived(),
+                ],
+                'changes' => $changes
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Error updating task: " . $e->getMessage());
+            return $this->json([
+                'error' => 'Erreur lors de la mise à jour de la tâche',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[Route('/api/tasks/{id}', name: 'tasks_delete', methods: ['DELETE'])]
+    #[IsGranted('ROLE_USER')]
+    public function delete(
+        int $id,
+        TasksRepository $tasksRepository,
+        UsersTasksRepository $usersTasksRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        try {
+            $user = $this->getUser();
+            
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur non authentifié'], 401);
+            }
+
+            // Récupérer la tâche
+            $task = $tasksRepository->find($id);
+
+            if (!$task) {
+                return $this->json(['error' => 'Tâche non trouvée'], 404);
+            }
+
+            // Vérifier que la tâche appartient à l'utilisateur
+            $userTask = $usersTasksRepository->findOneBy([
+                'tasks' => $task,
+                'user' => $user
+            ]);
+
+            if (!$userTask) {
+                return $this->json(['error' => 'Accès refusé à cette tâche'], 403);
+            }
+
+            // Archiver la tâche pour cet utilisateur (UserTask)
+            $userTask->setIsArchived(true);
+            $em->flush();
+
+            return $this->json([
+                'message' => 'Tâche archivée pour cet utilisateur avec succès'
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Error archiving task for user: " . $e->getMessage());
+            return $this->json([
+                'error' => 'Erreur lors de l\'archivage de la tâche',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[Route('/api/tasks/admin/{id}', name: 'tasks_delete_admin', methods: ['DELETE'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function deleteAdmin(
+        int $id,
+        TasksRepository $tasksRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        try {
+            $task = $tasksRepository->find($id);
+
+            if (!$task) {
+                return $this->json(['error' => 'Tâche non trouvée'], 404);
+            }
+
+            $em->remove($task);
+            $em->flush();
+
+            return $this->json([
+                'message' => 'Tâche supprimée définitivement (admin)'
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Erreur suppression définitive tâche: " . $e->getMessage());
+            return $this->json([
+                'error' => 'Erreur lors de la suppression définitive de la tâche',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[Route('/api/tasks/{id}', name: 'tasks_get', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function get(
+        int $id,
+        TasksRepository $tasksRepository,
+        UsersTasksRepository $usersTasksRepository
+    ): JsonResponse {
+        try {
+            $user = $this->getUser();
+            
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur non authentifié'], 401);
+            }
+
+            // Récupérer la tâche
+            $task = $tasksRepository->find($id);
+
+            if (!$task) {
+                return $this->json(['error' => 'Tâche non trouvée'], 404);
+            }
+
+            // Vérifier que la tâche appartient à l'utilisateur
+            $userTask = $usersTasksRepository->findOneBy([
+                'tasks' => $task,
+                'user' => $user
+            ]);
+
+            if (!$userTask) {
+                return $this->json(['error' => 'Accès refusé à cette tâche'], 403);
+            }
+
+            return $this->json([
+                'id' => $task->getId(),
+                'name' => $task->getName(),
+                'description' => $task->getDescription(),
+                'dueDate' => $task->getDueDate()?->format(DATE_ATOM),
+                'isArchived' => $task->isArchived(),
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Error fetching task: " . $e->getMessage());
+            return $this->json([
+                'error' => 'Erreur lors de la récupération de la tâche',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }
