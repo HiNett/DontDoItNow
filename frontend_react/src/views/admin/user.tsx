@@ -1,24 +1,25 @@
 import React, { useEffect, useState } from 'react';
 
-type Users = {
+type User = {
   id: number;
-  label: string;
-  color: string;
+  pseudo: string;
+  email: string;
+  roles: string[];
 };
 
 const Users: React.FC = () => {
-  const [users, setUsers] = useState<Users[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   // Pour le modal d'édition
   const [showModal, setShowModal] = useState(false);
-  const [editingUsers, setEditingUsers] = useState<Users | null>(null);
-  const [formData, setFormData] = useState({ label: '', color: '' });
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [formData, setFormData] = useState({ pseudo: '', email: '', password: '', role: '0' });
   
   // Pour le modal de création
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createFormData, setCreateFormData] = useState({ label: '', color: '#000000' });
+  const [createFormData, setCreateFormData] = useState({ pseudo: '', email: '', password: '', role: '0' });
 
   const fetchUsers = () => {
     const token = localStorage.getItem('authToken');
@@ -29,7 +30,7 @@ const Users: React.FC = () => {
       return;
     }
 
-    fetch('http://127.0.0.1:8000/api/userss', {
+    fetch('http://127.0.0.1:8000/api/admin/users', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -68,46 +69,48 @@ const Users: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const openEditModal = (users: Users) => {
-    setEditingUsers(users);
+  const openEditModal = (user: User) => {
+    setEditingUser(user);
     setFormData({
-      label: users.label,
-      color: users.color
+      pseudo: user.pseudo,
+      email: user.email,
+      password: '', // Ne pas pré-remplir le mot de passe
+      role: user.roles.includes('ROLE_ADMIN') ? '1' : '0'
     });
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
-    setEditingUsers(null);
-    setFormData({ label: '', color: '' });
+    setEditingUser(null);
+    setFormData({ pseudo: '', email: '', password: '', role: '0' });
   };
 
   // ---- MODAL CREATION LOGIC ----
   const openCreateModal = () => {
-    setCreateFormData({ label: '', color: '#000000' });
+    setCreateFormData({ pseudo: '', email: '', password: '', role: '0' });
     setShowCreateModal(true);
   };
 
   const closeCreateModal = () => {
     setShowCreateModal(false);
-    setCreateFormData({ label: '', color: '#000000' });
+    setCreateFormData({ pseudo: '', email: '', password: '', role: '0' });
   };
 
-  const handleCreateUsers = async () => {
+  const handleCreateUser = async () => {
     const token = localStorage.getItem('authToken');
     if (!token) {
       alert('Non authentifié');
       return;
     }
 
-    if (!createFormData.label.trim()) {
-      alert('Le label de la catégorie est requis');
+    if (!createFormData.pseudo.trim() || !createFormData.email.trim() || !createFormData.password.trim()) {
+      alert('Le pseudo, l\'email et le mot de passe sont requis');
       return;
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/admin/userss', {
+      const response = await fetch('http://127.0.0.1:8000/api/admin/users', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -115,8 +118,10 @@ const Users: React.FC = () => {
         },
         credentials: 'include',
         body: JSON.stringify({
-          label: createFormData.label,
-          color: createFormData.color
+          pseudo: createFormData.pseudo,
+          email: createFormData.email,
+          password: createFormData.password,
+          role: parseInt(createFormData.role)
         }),
       });
 
@@ -125,21 +130,21 @@ const Users: React.FC = () => {
         try {
           errorData = await response.json();
         } catch {}
-        throw new Error((errorData as any)?.error || 'Erreur lors de la création de la catégorie');
+        throw new Error((errorData as any)?.error || 'Erreur lors de la création de l\'utilisateur');
       }
 
       await response.json();
       closeCreateModal();
       fetchUsers();
     } catch (err: any) {
-      alert(err.message || 'Erreur lors de la création de la catégorie');
+      alert(err.message || 'Erreur lors de la création de l\'utilisateur');
     }
   };
 
   // ---- FIN MODAL CREATION LOGIC ----
 
-  const handleUpdateUsers = async () => {
-    if (!editingUsers) return;
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
 
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -148,17 +153,25 @@ const Users: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/admin/userss/${editingUsers.id}`, {
+      const body: any = {
+        pseudo: formData.pseudo,
+        email: formData.email,
+        role: parseInt(formData.role)
+      };
+
+      // N'inclure le mot de passe que s'il est fourni
+      if (formData.password.trim()) {
+        body.password = formData.password;
+      }
+
+      const response = await fetch(`http://127.0.0.1:8000/api/admin/users/${editingUser.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          label: formData.label,
-          color: formData.color
-        })
+        body: JSON.stringify(body)
       });
 
       if (!response.ok) {
@@ -167,18 +180,18 @@ const Users: React.FC = () => {
       }
 
       const result = await response.json();
-      console.log('Users updated:', result);
+      console.log('User updated:', result);
       
       closeModal();
-      fetchUsers(); // Recharger la liste des catégories
+      fetchUsers(); // Recharger la liste des utilisateurs
     } catch (err: any) {
       console.error('Update error:', err);
       alert(err.message || 'Erreur lors de la mise à jour');
     }
   };
 
-  const handleDeleteUsers = async (usersId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
+  const handleDeleteUser = async (userId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
       return;
     }
 
@@ -189,7 +202,7 @@ const Users: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/admin/userss/${usersId}`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -202,8 +215,8 @@ const Users: React.FC = () => {
         throw new Error(errorData.error || 'Erreur lors de la suppression');
       }
 
-      console.log('Users deleted');
-      fetchUsers(); // Recharger la liste des catégories
+      console.log('User deleted');
+      fetchUsers(); // Recharger la liste des utilisateurs
     } catch (err: any) {
       console.error('Delete error:', err);
       alert(err.message || 'Erreur lors de la suppression');
@@ -225,40 +238,36 @@ const Users: React.FC = () => {
       </nav>
 
       <div className="container">
-        <h1>Catégories</h1>
+        <h1>Utilisateurs</h1>
         <button 
           style={{ cursor: 'pointer', marginBottom: '20px' }}
           onClick={openCreateModal}
         >
-          Nouvelle Catégorie
+          Nouvel Utilisateur
         </button>
         {users.length === 0 ? (
-          <div>Pas de catégories trouvées.</div>
+          <div>Pas d'utilisateurs trouvés.</div>
         ) : (
           <table>
             <tbody>
-            {users.map((users) => (
-              <tr key={users.id} style={{ marginBottom: '1rem' }}>
-                <td><strong>{users.label}</strong></td>
+            {users.map((user) => (
+              <tr key={user.id} style={{ marginBottom: '1rem' }}>
+                <td><strong>{user.pseudo}</strong></td>
+                <td>{user.email}</td>
                 <td>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '10px' 
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: user.roles.includes('ROLE_ADMIN') ? '#dc3545' : '#28a745',
+                    color: 'white',
+                    fontSize: '0.85em'
                   }}>
-                    <div style={{ 
-                      width: '30px', 
-                      height: '30px', 
-                      backgroundColor: users.color,
-                      border: '1px solid #ccc',
-                      borderRadius: '4px'
-                    }}></div>
-                    <span>{users.color}</span>
-                  </div>
+                    {user.roles.includes('ROLE_ADMIN') ? 'Admin' : 'User'}
+                  </span>
                 </td>
                 <td>
                   <button 
-                    onClick={() => openEditModal(users)}
+                    onClick={() => openEditModal(user)}
                     style={{ cursor: 'pointer' }}
                   >
                     Modifier
@@ -266,7 +275,7 @@ const Users: React.FC = () => {
                 </td>
                 <td>
                   <button 
-                    onClick={() => handleDeleteUsers(users.id)}
+                    onClick={() => handleDeleteUser(user.id)}
                     style={{ cursor: 'pointer' }}
                   >
                     Supprimer
@@ -280,7 +289,7 @@ const Users: React.FC = () => {
         )}
       </div>
 
-      {/* Modal pour créer une catégorie */}
+      {/* Modal pour créer un utilisateur */}
       {showCreateModal && (
         <div style={{
           position: 'fixed',
@@ -301,16 +310,54 @@ const Users: React.FC = () => {
             minWidth: '400px',
             maxWidth: '600px'
           }}>
-            <h2 style={{ color: 'black' }}>Créer une nouvelle catégorie</h2>
+            <h2 style={{ color: 'black' }}>Créer un nouvel utilisateur</h2>
             
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
-                Label de la catégorie *
+                Pseudo *
               </label>
               <input
                 type="text"
-                value={createFormData.label}
-                onChange={(e) => setCreateFormData({ ...createFormData, label: e.target.value })}
+                value={createFormData.pseudo}
+                onChange={(e) => setCreateFormData({ ...createFormData, pseudo: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px'
+                }}
+                required
+                maxLength={16}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+                Email *
+              </label>
+              <input
+                type="email"
+                value={createFormData.email}
+                onChange={(e) => setCreateFormData({ ...createFormData, email: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px'
+                }}
+                required
+                maxLength={64}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+                Mot de passe *
+              </label>
+              <input
+                type="password"
+                value={createFormData.password}
+                onChange={(e) => setCreateFormData({ ...createFormData, password: e.target.value })}
                 style={{
                   width: '100%',
                   padding: '8px',
@@ -323,34 +370,21 @@ const Users: React.FC = () => {
 
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
-                Couleur *
+                Rôle *
               </label>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <input
-                  type="color"
-                  value={createFormData.color}
-                  onChange={(e) => setCreateFormData({ ...createFormData, color: e.target.value })}
-                  style={{
-                    width: '60px',
-                    height: '40px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                />
-                <input
-                  type="text"
-                  value={createFormData.color}
-                  onChange={(e) => setCreateFormData({ ...createFormData, color: e.target.value })}
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px'
-                  }}
-                  placeholder="#000000"
-                />
-              </div>
+              <select
+                value={createFormData.role}
+                onChange={(e) => setCreateFormData({ ...createFormData, role: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px'
+                }}
+              >
+                <option value="0">Utilisateur</option>
+                <option value="1">Administrateur</option>
+              </select>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -368,7 +402,7 @@ const Users: React.FC = () => {
                 Annuler
               </button>
               <button
-                onClick={handleCreateUsers}
+                onClick={handleCreateUser}
                 style={{
                   padding: '10px 20px',
                   border: 'none',
@@ -385,8 +419,8 @@ const Users: React.FC = () => {
         </div>
       )}
 
-      {/* Modal pour éditer une catégorie */}
-      {showModal && editingUsers && (
+      {/* Modal pour éditer un utilisateur */}
+      {showModal && editingUser && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -406,55 +440,79 @@ const Users: React.FC = () => {
             minWidth: '400px',
             maxWidth: '600px'
           }}>
-            <h2 style={{ color: 'black' }}>Modifier la catégorie</h2>
+            <h2 style={{ color: 'black' }}>Modifier l'utilisateur</h2>
             
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
-                Label de la catégorie *
+                Pseudo *
               </label>
               <input
                 type="text"
-                value={formData.label}
-                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                value={formData.pseudo}
+                onChange={(e) => setFormData({ ...formData, pseudo: e.target.value })}
                 style={{
                   width: '100%',
                   padding: '8px',
                   border: '1px solid #ccc',
                   borderRadius: '4px'
                 }}
+                maxLength={16}
               />
             </div>
 
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
-                Couleur *
+                Email *
               </label>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <input
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  style={{
-                    width: '60px',
-                    height: '40px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                />
-                <input
-                  type="text"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px'
-                  }}
-                  placeholder="#000000"
-                />
-              </div>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px'
+                }}
+                maxLength={64}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+                Nouveau mot de passe (laisser vide pour ne pas changer)
+              </label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px'
+                }}
+                placeholder="Laisser vide pour ne pas changer"
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+                Rôle *
+              </label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px'
+                }}
+              >
+                <option value="0">Utilisateur</option>
+                <option value="1">Administrateur</option>
+              </select>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -472,7 +530,7 @@ const Users: React.FC = () => {
                 Annuler
               </button>
               <button
-                onClick={handleUpdateUsers}
+                onClick={handleUpdateUser}
                 style={{
                   padding: '10px 20px',
                   border: 'none',
