@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Search from './React_Search_Components-main/Search';
 
 type Task = {
   id: number;
@@ -299,58 +300,61 @@ const Tasks: React.FC = () => {
       {tasks.length === 0 ? (
         <div>Pas de taches trouvées.</div>
       ) : (
-        <table>
-              <tbody>
-          {tasks.map((task) => (
-                  <tr key={task.id} style={{ marginBottom: '1rem' }}>
-                    <td><strong>{task.name}</strong></td>
-                    <td>{task.description || <em>No description</em>}</td>
-                    <td>
-                      {task.category ? (
-                        <span style={{ 
-                          backgroundColor: task.category.color, 
-                          color: 'white', 
-                          padding: '2px 8px', 
-                          borderRadius: '4px',
-                          fontSize: '0.85em'
-                        }}>
-                          {task.category.label}
-                        </span>
-                      ) : <em>Pas de catégorie</em>}
-                    </td>
-                    <td>
-                      {task.priority ? (
-                        <span style={{ fontWeight: 'bold' }}>
-                          {task.priority.label}
-                        </span>
-                      ) : <em>Pas de priorité</em>}
-                    </td>
-                    <td>
-                      Due Date:{' '}
-                      {task.dueDate
-                        ? new Date(task.dueDate).toLocaleString()
-                        : <em>None</em>}
-                    </td>
-                    <td>
-                      <button 
-                        onClick={() => openEditModal(task)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        Update
-                      </button>
-                    </td>
-                    <td>
-                      <button 
-                        onClick={() => handleDeleteTask(task.id)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        Delete
-                      </button>
-                    </td>
-            </tr>
-          ))}
-              </tbody>
-        </table>
+        <div>
+          <Search />
+          <table>
+                <tbody>
+            {tasks.map((task) => (
+                    <tr key={task.id} style={{ marginBottom: '1rem' }}>
+                      <td><strong>{task.name}</strong></td>
+                      <td>{task.description || <em>No description</em>}</td>
+                      <td>
+                        {task.category ? (
+                          <span style={{ 
+                            backgroundColor: task.category.color, 
+                            color: 'white', 
+                            padding: '2px 8px', 
+                            borderRadius: '4px',
+                            fontSize: '0.85em'
+                          }}>
+                            {task.category.label}
+                          </span>
+                        ) : <em>Pas de catégorie</em>}
+                      </td>
+                      <td>
+                        {task.priority ? (
+                          <span style={{ fontWeight: 'bold' }}>
+                            {task.priority.label}
+                          </span>
+                        ) : <em>Pas de priorité</em>}
+                      </td>
+                      <td>
+                        Due Date:{' '}
+                        {task.dueDate
+                          ? new Date(task.dueDate).toLocaleString()
+                          : <em>None</em>}
+                      </td>
+                      <td>
+                        <button 
+                          onClick={() => openEditModal(task)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          Update
+                        </button>
+                      </td>
+                      <td>
+                        <button 
+                          onClick={() => handleDeleteTask(task.id)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          Delete
+                        </button>
+                      </td>
+              </tr>
+            ))}
+                </tbody>
+          </table>
+        </div>
         )}
       </div>
 
