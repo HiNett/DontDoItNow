@@ -12,10 +12,20 @@ const LoginPage: React.FC = () => {
         e.preventDefault();
         axios.post("http://127.0.0.1:8000/api/login", {
             email, password
+        }, {
+            withCredentials: true
         })
             .then((response) => {
                 if (response.status === 200) {
                     console.log("Login successful");
+                    console.log("Response data:", response.data);
+                    // Stocker le token dans localStorage
+                    if (response.data.token) {
+                        localStorage.setItem('authToken', response.data.token);
+                        console.log("Token stored:", response.data.token.substring(0, 50) + "...");
+                    } else {
+                        console.error("No token in response!");
+                    }
                     navigate("/tasks");
                 }
             })

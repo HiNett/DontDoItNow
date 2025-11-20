@@ -26,7 +26,7 @@ class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
             'iat' => time(),
             'exp' => time() + 86400, // 24 heures de validité
         ];
-        $secret = 'votre_clé_secrète_très_complexe_changez_moi';
+        $secret = 'LeTokenDoitEtreSecretNestPasGregoire?';
 
         $base64UrlHeader = rtrim(strtr(base64_encode(json_encode($header)), '+/', '-_'), '=');
         $base64UrlPayload = rtrim(strtr(base64_encode(json_encode($payload)), '+/', '-_'), '=');

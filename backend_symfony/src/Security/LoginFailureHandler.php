@@ -31,4 +31,3 @@ class LoginFailureHandler implements AuthenticationFailureHandlerInterface
         ], JsonResponse::HTTP_UNAUTHORIZED);
     }
 }
-

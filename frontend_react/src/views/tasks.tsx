@@ -14,18 +14,52 @@ const Tasks: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/tasks')
-      .then((res) => {
+    const token = localStorage.getItem('authToken');
+    
+    console.log("Token from localStorage:", token ? token.substring(0, 50) + "..." : "NO TOKEN");
+    
+    if (!token) {
+      setError('Non authentifié. Veuillez vous connecter.');
+      setLoading(false);
+      return;
+    }
+
+    fetch('http://127.0.0.1:8000/api/tasks', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+      .then(async (res) => {
+        console.log('Response status:', res.status);
+        console.log('Response ok:', res.ok);
+        console.log('Response headers:', res.headers);
+        
         if (!res.ok) {
-          throw new Error('Failed to fetch tasks');
+          if (res.status === 401) {
+            localStorage.removeItem('authToken');
+            throw new Error('Session expirée. Veuillez vous reconnecter.');
+          }
+          // En cas d'erreur, j'ai rajouté ces lignes, au moins on a la réponse complète du serveur (bon en HTML, mais c'est déjà mieux que rien)
+          const text = await res.text();
+          console.error('Error response (text):', text);
+          try {
+            const errorData = JSON.parse(text);
+            throw new Error(errorData?.message || errorData?.error || `HTTP ${res.status}: Failed to fetch tasks`);
+          } catch (e) {
+            throw new Error(`HTTP ${res.status}: ${text || 'Failed to fetch tasks'}`);
+          }
         }
         return res.json();
       })
       .then((data) => {
+        console.log('Tasks loaded:', data);
         setTasks(data);
         setLoading(false);
       })
       .catch((err) => {
+        console.error('Fetch error:', err);
         setError(err.message || 'Unknown error');
         setLoading(false);
       });
@@ -41,19 +75,21 @@ const Tasks: React.FC = () => {
         <div>Pas de taches trouvées.</div>
       ) : (
         <table>
-          {tasks.map((task) => (
-            <tr key={task.id} style={{ marginBottom: '1rem' }}>
-              <td><strong>{task.name}</strong></td>
-              <td>{task.description || <em>No description</em>}</td>
-              <td>
-                Due Date:{' '}
-                {task.dueDate
-                  ? new Date(task.dueDate).toLocaleString()
-                  : <em>None</em>}
-              </td>
-              <td>Archived: {task.isArchived ? 'Yes' : 'No'}</td>
-            </tr>
-          ))}
+          <tbody>
+            {tasks.map((task) => (
+              <tr key={task.id} style={{ marginBottom: '1rem' }}>
+                <td><strong>{task.name}</strong></td>
+                <td>{task.description || <em>No description</em>}</td>
+                <td>
+                  Due Date:{' '}
+                  {task.dueDate
+                    ? new Date(task.dueDate).toLocaleString()
+                    : <em>None</em>}
+                </td>
+                <td>Archived: {task.isArchived ? 'Yes' : 'No'}</td>
+              </tr>
+            ))}
+          </tbody>
         </table>
 
       )}

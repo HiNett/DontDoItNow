@@ -11,8 +11,8 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
-use Symfony\Component\Security\Http\Authenticator\Passport\Credentials\PasswordCredentials;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
+use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 
 /**
  * Authenticator pour l'authentification par token API
@@ -48,41 +48,58 @@ class TokenAuthenticator extends AbstractAuthenticator
         $token = $this->getTokenFromRequest($request);
 
         if (!$token) {
+            error_log("TokenAuthenticator: Token manquant");
             throw new AuthenticationException('Token manquant');
         }
 
-        // Ici, vous devriez valider le token (par exemple, vérifier dans une table de tokens)
-        // Pour l'instant, on décode le token simple généré par LoginSuccessHandler
-        // En production, utilisez un système de tokens JWT ou des tokens stockés en base
-        
-        // Décode le token base64 (format: email:timestamp)
-        $decoded = base64_decode($token, true);
-        if ($decoded === false) {
+        error_log("TokenAuthenticator: Token reçu (début): " . substr($token, 0, 50));
+
+        // Valide le JWT généré par LoginSuccessHandler
+        $parts = explode('.', $token);
+        if (count($parts) !== 3) {
+            error_log("TokenAuthenticator: Token invalide - nombre de parties: " . count($parts));
             throw new AuthenticationException('Token invalide');
         }
+
+        [$base64UrlHeader, $base64UrlPayload, $base64UrlSignature] = $parts;
+
+        // Décode le payload
+        $payload = json_decode(base64_decode(strtr($base64UrlPayload, '-_', '+/')), true);
         
-        $parts = explode(':', $decoded, 2);
-        if (count($parts) !== 2) {
+        if (!$payload || !isset($payload['email'])) {
+            error_log("TokenAuthenticator: Payload invalide ou email manquant");
             throw new AuthenticationException('Token invalide');
         }
-        
-        [$email, $timestamp] = $parts;
-        
-        // Vérifie que le token n'est pas trop ancien (par exemple, 24 heures)
-        $maxAge = 86400; // 24 heures en secondes
-        if (time() - (int)$timestamp > $maxAge) {
+
+        error_log("TokenAuthenticator: Email du token: " . $payload['email']);
+
+        // Vérifie l'expiration
+        if (isset($payload['exp']) && $payload['exp'] < time()) {
+            error_log("TokenAuthenticator: Token expiré - exp: " . $payload['exp'] . ", now: " . time());
             throw new AuthenticationException('Token expiré');
         }
-        
-        $user = $this->usersRepository->findOneByEmail($email);
 
-        if (!$user) {
-            throw new UserNotFoundException('Token invalide');
+        // Vérifie la signature
+        $secret = 'LeTokenDoitEtreSecretNestPasGregoire?';
+        $expectedSignature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $secret, true);
+        $expectedBase64UrlSignature = rtrim(strtr(base64_encode($expectedSignature), '+/', '-_'), '=');
+        
+        if (!hash_equals($expectedBase64UrlSignature, $base64UrlSignature)) {
+            error_log("TokenAuthenticator: Signature invalide");
+            throw new AuthenticationException('Token invalide - signature incorrecte');
         }
 
-        return new Passport(
-            new UserBadge($user->getUserIdentifier()),
-            new PasswordCredentials('') // Pas de vérification de mot de passe ici
+        $user = $this->usersRepository->findOneByEmail($payload['email']);
+
+        if (!$user) {
+            error_log("TokenAuthenticator: Utilisateur non trouvé pour email: " . $payload['email']);
+            throw new UserNotFoundException('Utilisateur non trouvé');
+        }
+
+        error_log("TokenAuthenticator: Authentification réussie pour: " . $user->getEmail());
+
+        return new SelfValidatingPassport(
+            new UserBadge($user->getUserIdentifier())
         );
     }
 
