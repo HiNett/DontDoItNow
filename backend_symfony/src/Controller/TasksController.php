@@ -28,37 +28,6 @@ final class TasksController extends AbstractController
         ]);
     }
 
-    #[Route('/api/categories', name: 'categories_list', methods: ['GET'])]
-    public function listCategories(TaskCategoryRepository $categoryRepository): JsonResponse
-    {
-        $categories = $categoryRepository->findAll();
-
-        $data = array_map(static function ($category): array {
-            return [
-                'id' => $category->getId(),
-                'label' => $category->getLabel(),
-                'color' => $category->getColor(),
-            ];
-        }, $categories);
-
-        return $this->json($data);
-    }
-
-    #[Route('/api/priorities', name: 'priorities_list', methods: ['GET'])]
-    public function listPriorities(TaskPriorityRepository $priorityRepository): JsonResponse
-    {
-        $priorities = $priorityRepository->findAll();
-
-        $data = array_map(static function ($priority): array {
-            return [
-                'id' => $priority->getId(),
-                'label' => $priority->getLabel(),
-            ];
-        }, $priorities);
-
-        return $this->json($data);
-    }
-
     #[Route('/api/tasks', name: 'tasks_list', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     public function list(UsersTasksRepository $usersTasksRepository): JsonResponse
@@ -102,7 +71,7 @@ final class TasksController extends AbstractController
         }
     }
 
-    #[Route('/api/tasks/all', name: 'tasks_list_all', methods: ['GET'])]
+    #[Route('/api/admin/tasks/all', name: 'tasks_list_all', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
     public function listAll(TasksRepository $tasksRepository): JsonResponse
     {
@@ -490,7 +459,7 @@ final class TasksController extends AbstractController
         }
     }
 
-    #[Route('/api/tasks/admin/{id}', name: 'tasks_delete_admin', methods: ['DELETE'])]
+    #[Route('/api/admin/task/{id}', name: 'task_delete_admin', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN')]
     public function deleteAdmin(
         int $id,

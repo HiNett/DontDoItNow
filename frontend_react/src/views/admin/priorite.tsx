@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from 'react';
 
-type Task = {
+type Priorite = {
   id: number;
-  name: string;
-  description: string | null;
-  dueDate: string | null;
-  isArchived: boolean;
+  label: string;
 };
 
-const Tasks: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+const Priorite: React.FC = () => {
+  const [priorite, setPriorite] = useState<Priorite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Pour le modal d'édition
   const [showModal, setShowModal] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', dueDate: '', isArchived: false });
+  const [editingPriorite, setEditingPriorite] = useState<Priorite | null>(null);
+  const [formData, setFormData] = useState({ label: '' });
+  
+  // Pour le modal de création
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createFormData, setCreateFormData] = useState({ label: '' });
 
-  const fetchTasks = () => {
+  const fetchPriorite = () => {
     const token = localStorage.getItem('authToken');
     
     if (!token) {
@@ -25,7 +28,7 @@ const Tasks: React.FC = () => {
       return;
     }
 
-    fetch('http://127.0.0.1:8000/api/admin/tasks/all', {
+    fetch('http://127.0.0.1:8000/api/priorities', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -41,16 +44,16 @@ const Tasks: React.FC = () => {
           const text = await res.text();
           try {
             const errorData = JSON.parse(text);
-            throw new Error(errorData?.message || errorData?.error || `HTTP ${res.status}: Failed to fetch tasks`);
+            throw new Error(errorData?.message || errorData?.error || `HTTP ${res.status}: Failed to fetch priorite`);
           } catch (e) {
-            throw new Error(`HTTP ${res.status}: ${text || 'Failed to fetch tasks'}`);
+            throw new Error(`HTTP ${res.status}: ${text || 'Failed to fetch priorite'}`);
           }
         }
         return res.json();
       })
       .then((data) => {
-        console.log('Tasks loaded:', data);
-        setTasks(data);
+        console.log('Priorite loaded:', data);
+        setPriorite(data);
         setLoading(false);
       })
       .catch((err) => {
@@ -61,28 +64,79 @@ const Tasks: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchTasks();
+    fetchPriorite();
   }, []);
 
-  const openEditModal = (task: Task) => {
-    setEditingTask(task);
+  const openEditModal = (priorite: Priorite) => {
+    setEditingPriorite(priorite);
     setFormData({
-      name: task.name,
-      description: task.description || '',
-      dueDate: task.dueDate ? task.dueDate.substring(0, 16) : '',
-      isArchived: task.isArchived
+      label: priorite.label
     });
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
-    setEditingTask(null);
-    setFormData({ name: '', description: '', dueDate: '', isArchived: false });
+    setEditingPriorite(null);
+    setFormData({ label: '' });
   };
 
-  const handleUpdateTask = async () => {
-    if (!editingTask) return;
+  // ---- MODAL CREATION LOGIC ----
+  const openCreateModal = () => {
+    setCreateFormData({ label: '' });
+    setShowCreateModal(true);
+  };
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+    setCreateFormData({ label: '' });
+  };
+
+  const handleCreatePriorite = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      alert('Non authentifié');
+      return;
+    }
+
+    if (!createFormData.label.trim()) {
+      alert('Le label de la priorité est requis');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/admin/priorities', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          label: createFormData.label
+        }),
+      });
+
+      if (!response.ok) {
+        let errorData = {};
+        try {
+          errorData = await response.json();
+        } catch {}
+        throw new Error((errorData as any)?.error || 'Erreur lors de la création de la priorité');
+      }
+
+      await response.json();
+      closeCreateModal();
+      fetchPriorite();
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors de la création de la priorité');
+    }
+  };
+
+  // ---- FIN MODAL CREATION LOGIC ----
+
+  const handleUpdatePriorite = async () => {
+    if (!editingPriorite) return;
 
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -91,7 +145,7 @@ const Tasks: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/tasks/${editingTask.id}`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/admin/priorities/${editingPriorite.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -99,10 +153,7 @@ const Tasks: React.FC = () => {
         },
         credentials: 'include',
         body: JSON.stringify({
-          name: formData.name,
-          description: formData.description || null,
-          dueDate: formData.dueDate || null,
-          isArchived: formData.isArchived
+          label: formData.label
         })
       });
 
@@ -112,18 +163,18 @@ const Tasks: React.FC = () => {
       }
 
       const result = await response.json();
-      console.log('Task updated:', result);
+      console.log('Priorite updated:', result);
       
       closeModal();
-      fetchTasks(); // Recharger la liste des tâches
+      fetchPriorite(); // Recharger la liste des priorités
     } catch (err: any) {
       console.error('Update error:', err);
       alert(err.message || 'Erreur lors de la mise à jour');
     }
   };
 
-  const handleDeleteTask = async (taskId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
+  const handleDeletePriorite = async (prioriteId: number) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette priorité ?')) {
       return;
     }
 
@@ -134,7 +185,7 @@ const Tasks: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/admin/task/${taskId}`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/admin/priorities/${prioriteId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -147,8 +198,8 @@ const Tasks: React.FC = () => {
         throw new Error(errorData.error || 'Erreur lors de la suppression');
       }
 
-      console.log('Task deleted');
-      fetchTasks(); // Recharger la liste des tâches
+      console.log('Priorite deleted');
+      fetchPriorite(); // Recharger la liste des priorités
     } catch (err: any) {
       console.error('Delete error:', err);
       alert(err.message || 'Erreur lors de la suppression');
@@ -169,37 +220,35 @@ const Tasks: React.FC = () => {
         <a href="/admin/priorities">Priorities</a>
       </nav>
       <div className="container">
-        <h1>Tasks</h1>
-        {tasks.length === 0 ? (
-          <div>Pas de taches trouvées.</div>
+        <h1>Priorités</h1>
+        <button 
+          style={{ cursor: 'pointer', marginBottom: '20px' }}
+          onClick={openCreateModal}
+        >
+          Nouvelle Priorité
+        </button>
+        {priorite.length === 0 ? (
+          <div>Pas de priorités trouvées.</div>
         ) : (
           <table>
             <tbody>
-            {tasks.map((task) => (
-              <tr key={task.id} style={{ marginBottom: '1rem' }}>
-                <td><strong>{task.name}</strong></td>
-                <td>{task.description || <em>No description</em>}</td>
-                <td>
-                  Due Date:{' '}
-                  {task.dueDate
-                    ? new Date(task.dueDate).toLocaleString()
-                    : <em>None</em>}
-                </td>
-                <td>Archived: {task.isArchived ? 'Yes' : 'No'}</td>
+            {priorite.map((priorite) => (
+              <tr key={priorite.id} style={{ marginBottom: '1rem' }}>
+                <td><strong>{priorite.label}</strong></td>
                 <td>
                   <button 
-                    onClick={() => openEditModal(task)}
+                    onClick={() => openEditModal(priorite)}
                     style={{ cursor: 'pointer' }}
                   >
-                    Update
+                    Modifier
                   </button>
                 </td>
                 <td>
                   <button 
-                    onClick={() => handleDeleteTask(task.id)}
+                    onClick={() => handleDeletePriorite(priorite.id)}
                     style={{ cursor: 'pointer' }}
                   >
-                    Delete
+                    Supprimer
                   </button>
                 </td>
               </tr>
@@ -210,8 +259,8 @@ const Tasks: React.FC = () => {
         )}
       </div>
 
-      {/* Modal pour éditer une tâche */}
-      {showModal && editingTask && (
+      {/* Modal pour créer une priorité */}
+      {showCreateModal && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -231,50 +280,89 @@ const Tasks: React.FC = () => {
             minWidth: '400px',
             maxWidth: '600px'
           }}>
-            <h2 style={{ color: 'black' }}>Modifier la tâche</h2>
+            <h2 style={{ color: 'black' }}>Créer une nouvelle priorité</h2>
             
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
-                Nom de la tâche *
+                Label de la priorité *
               </label>
               <input
                 type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={createFormData.label}
+                onChange={(e) => setCreateFormData({ ...createFormData, label: e.target.value })}
                 style={{
                   width: '100%',
                   padding: '8px',
                   border: '1px solid #ccc',
                   borderRadius: '4px'
                 }}
+                required
               />
             </div>
 
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={closeCreateModal}
                 style={{
-                  width: '100%',
-                  padding: '8px',
+                  padding: '10px 20px',
                   border: '1px solid #ccc',
-                  borderRadius: '4px'
+                  borderRadius: '4px',
+                  backgroundColor: 'white',
+                  cursor: 'pointer',
+                  color: 'black'
                 }}
-              />
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleCreatePriorite}
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                Créer
+              </button>
             </div>
+          </div>
+        </div>
+      )}
 
+      {/* Modal pour éditer une priorité */}
+      {showModal && editingPriorite && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '30px',
+            borderRadius: '8px',
+            minWidth: '400px',
+            maxWidth: '600px'
+          }}>
+            <h2 style={{ color: 'black' }}>Modifier la priorité</h2>
+            
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
-                Date d'échéance
+                Label de la priorité *
               </label>
               <input
-                type="datetime-local"
-                value={formData.dueDate}
-                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                type="text"
+                value={formData.label}
+                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                 style={{
                   width: '100%',
                   padding: '8px',
@@ -282,18 +370,6 @@ const Tasks: React.FC = () => {
                   borderRadius: '4px'
                 }}
               />
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={formData.isArchived}
-                  onChange={(e) => setFormData({ ...formData, isArchived: e.target.checked })}
-                  style={{ marginRight: '8px' }}
-                />
-                <span style={{ color: 'black' }}>Archiver cette tâche</span>
-              </label>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -308,10 +384,10 @@ const Tasks: React.FC = () => {
                   color: 'black'
                 }}
               >
-                Cancel
+                Annuler
               </button>
               <button
-                onClick={handleUpdateTask}
+                onClick={handleUpdatePriorite}
                 style={{
                   padding: '10px 20px',
                   border: 'none',
@@ -331,4 +407,5 @@ const Tasks: React.FC = () => {
   );
 };
 
-export default Tasks;
+export default Priorite;
+
