@@ -5,6 +5,8 @@
 }
 
 .nav {
+  width: 100vw;
+  top: 0px;
   height: 60px;
   background: #333;
   color: white;
@@ -17,21 +19,18 @@
 
 .layout-container {
   flex: 1;
-  margin: 20px;
   color: white;
   border-radius: 8px;
-  padding: 2rem;
   display: flex;
   justify-content: center;
-  align-items: center;
 }
 
 .container {
+  flex-direction: column;
   margin: 20px;
   color: white;
   border-radius: 8px;
   padding: 5rem;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
   display: flex;
   justify-content: center;
   align-items: center;

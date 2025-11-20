@@ -27,7 +27,11 @@ const LoginPage: React.FC = () => {
                     } else {
                         console.error("No token in response!");
                     }
-                    navigate("/tasks");
+                    if (response.data.user.roles[1] === 'ROLE_ADMIN'){
+                        navigate("/admin/dashboard");
+                    }else{
+                        navigate("/tasks");
+                    }
                 }
             })
             .catch((error) => {
