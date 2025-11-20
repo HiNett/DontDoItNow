@@ -220,9 +220,10 @@ const Categorie: React.FC = () => {
         <a href="/admin/dashboard">Dashboard</a>
         <a href="/admin/tasks">Tasks</a>
         <a href="/admin/users">Users</a>
-        <a href="/admin/categorie">Categories</a>
+        <a href="/admin/categories">Categories</a>
         <a href="/admin/priorities">Priorities</a>
       </nav>
+
       <div className="container">
         <h1>Catégories</h1>
         <button 
