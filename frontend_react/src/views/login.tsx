@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "../template.css";
 
 const LoginPage: React.FC = () => {
     const [email, setEmail] = useState<string>("");
@@ -42,25 +43,27 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div style={{ display: "block", marginLeft: "auto", marginRight: "auto", width: "500px" }}>
-            <h1>Login</h1>
-            <input
-                type="text"
-                value={email}
-                style={style}
-                placeholder="email"
-                onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-                type="password"
-                value={password}
-                style={style}
-                placeholder="Password"
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <button type="submit" onClick={handleLogin}>
-                Envoyer
-            </button>
+        <div className="container login-center">
+            <div className="login-card">
+                <h1>Login</h1>
+                <input
+                    type="text"
+                    value={email}
+                    style={style}
+                    placeholder="email"
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+                <input
+                    type="password"
+                    value={password}
+                    style={style}
+                    placeholder="Password"
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+                <button type="submit" onClick={handleLogin}>
+                    Envoyer
+                </button>
+            </div>
         </div>
     );
 };

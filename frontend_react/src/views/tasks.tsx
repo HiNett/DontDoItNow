@@ -69,6 +69,7 @@ const Tasks: React.FC = () => {
   if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
 
   return (
+<<<<<<< Updated upstream
     <div style={{ padding: '1rem', fontFamily: 'sans-serif' }}>
       <h1>Tasks</h1>
       {tasks.length === 0 ? (
@@ -76,6 +77,17 @@ const Tasks: React.FC = () => {
       ) : (
         <table>
           <tbody>
+=======
+    
+    <div>
+      <nav className="nav">nav</nav>
+      <div className="container">
+        <h1>Tasks</h1>
+        {tasks.length === 0 ? (
+          <div>Pas de taches trouvées.</div>
+        ) : (
+          <table>
+>>>>>>> Stashed changes
             {tasks.map((task) => (
               <tr key={task.id} style={{ marginBottom: '1rem' }}>
                 <td><strong>{task.name}</strong></td>
@@ -87,12 +99,21 @@ const Tasks: React.FC = () => {
                     : <em>None</em>}
                 </td>
                 <td>Archived: {task.isArchived ? 'Yes' : 'No'}</td>
+<<<<<<< Updated upstream
               </tr>
             ))}
           </tbody>
         </table>
+=======
+                <td><a href={`update/${task.id}`}>Update</a></td>
+                <td><a href={`delete/${task.id}`}>Delete</a></td>
+              </tr>
+            ))}
+          </table>
+>>>>>>> Stashed changes
 
-      )}
+        )}
+      </div>
     </div>
   );
 };

@@ -51,6 +51,7 @@ final class AuthController extends AbstractController
     #[IsGranted('ROLE_USER')]
     public function logout(): JsonResponse
     {
+        $this->getUser()->eraseCredentials();
         return $this->json([
             'message' => 'Déconnexion réussie',
         ]);
