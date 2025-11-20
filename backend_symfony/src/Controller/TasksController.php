@@ -8,6 +8,8 @@ use App\Entity\UsersTasks;
 use App\Repository\TasksRepository;
 use App\Repository\UsersTasksRepository;
 use App\Repository\TaskStatusRepository;
+use App\Repository\TaskCategoryRepository;
+use App\Repository\TaskPriorityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +26,37 @@ final class TasksController extends AbstractController
             'message' => 'Welcome to your new controller!',
             'path' => 'src/Controller/TasksController.php',
         ]);
+    }
+
+    #[Route('/api/categories', name: 'categories_list', methods: ['GET'])]
+    public function listCategories(TaskCategoryRepository $categoryRepository): JsonResponse
+    {
+        $categories = $categoryRepository->findAll();
+
+        $data = array_map(static function ($category): array {
+            return [
+                'id' => $category->getId(),
+                'label' => $category->getLabel(),
+                'color' => $category->getColor(),
+            ];
+        }, $categories);
+
+        return $this->json($data);
+    }
+
+    #[Route('/api/priorities', name: 'priorities_list', methods: ['GET'])]
+    public function listPriorities(TaskPriorityRepository $priorityRepository): JsonResponse
+    {
+        $priorities = $priorityRepository->findAll();
+
+        $data = array_map(static function ($priority): array {
+            return [
+                'id' => $priority->getId(),
+                'label' => $priority->getLabel(),
+            ];
+        }, $priorities);
+
+        return $this->json($data);
     }
 
     #[Route('/api/tasks', name: 'tasks_list', methods: ['GET'])]
@@ -47,6 +80,15 @@ final class TasksController extends AbstractController
                     'description' => $task->getDescription(),
                     'dueDate' => $task->getDueDate()?->format(DATE_ATOM),
                     'isArchived' => $task->isArchived(),
+                    'category' => $task->getCategory() ? [
+                        'id' => $task->getCategory()->getId(),
+                        'label' => $task->getCategory()->getLabel(),
+                        'color' => $task->getCategory()->getColor(),
+                    ] : null,
+                    'priority' => $task->getPriority() ? [
+                        'id' => $task->getPriority()->getId(),
+                        'label' => $task->getPriority()->getLabel(),
+                    ] : null,
                 ];
             }, $tasks);
 
@@ -84,7 +126,9 @@ final class TasksController extends AbstractController
     public function create(
         Request $request,
         EntityManagerInterface $em,
-        TaskStatusRepository $taskStatusRepository
+        TaskStatusRepository $taskStatusRepository,
+        TaskCategoryRepository $taskCategoryRepository,
+        TaskPriorityRepository $taskPriorityRepository
     ): JsonResponse {
         try {
             $user = $this->getUser();
@@ -115,8 +159,8 @@ final class TasksController extends AbstractController
                 }
             }
 
-            // Récupérer le statut par défaut (ou créer si nécessaire)
-            $status = $taskStatusRepository->findOneBy(['name' => 'En cours']) 
+            // Récupérer le statut par défaut
+            $status = $taskStatusRepository->findOneBy(['label' => 'En cours']) 
                 ?? $taskStatusRepository->findOneBy([])
                 ?? null;
 
@@ -125,6 +169,22 @@ final class TasksController extends AbstractController
             }
 
             $task->setStatus($status);
+
+            // Gérer la catégorie
+            if (isset($data['categoryId']) && !empty($data['categoryId'])) {
+                $category = $taskCategoryRepository->find($data['categoryId']);
+                if ($category) {
+                    $task->setCategory($category);
+                }
+            }
+
+            // Gérer la priorité
+            if (isset($data['priorityId']) && !empty($data['priorityId'])) {
+                $priority = $taskPriorityRepository->find($data['priorityId']);
+                if ($priority) {
+                    $task->setPriority($priority);
+                }
+            }
 
             // Créer la relation UsersTasks
             $userTask = new UsersTasks();
@@ -143,6 +203,15 @@ final class TasksController extends AbstractController
                     'description' => $task->getDescription(),
                     'dueDate' => $task->getDueDate()?->format(DATE_ATOM),
                     'isArchived' => $task->isArchived(),
+                    'category' => $task->getCategory() ? [
+                        'id' => $task->getCategory()->getId(),
+                        'label' => $task->getCategory()->getLabel(),
+                        'color' => $task->getCategory()->getColor(),
+                    ] : null,
+                    'priority' => $task->getPriority() ? [
+                        'id' => $task->getPriority()->getId(),
+                        'label' => $task->getPriority()->getLabel(),
+                    ] : null,
                 ]
             ], 201);
 
@@ -162,6 +231,8 @@ final class TasksController extends AbstractController
         Request $request,
         TasksRepository $tasksRepository,
         UsersTasksRepository $usersTasksRepository,
+        TaskCategoryRepository $taskCategoryRepository,
+        TaskPriorityRepository $taskPriorityRepository,
         EntityManagerInterface $em
     ): JsonResponse {
         try {
@@ -261,6 +332,56 @@ final class TasksController extends AbstractController
                 }
             }
 
+            // Gérer la catégorie
+            if (isset($data['categoryId'])) {
+                $oldCategoryId = $task->getCategory()?->getId();
+                $newCategoryId = $data['categoryId'] ? (int)$data['categoryId'] : null;
+                
+                if ($oldCategoryId !== $newCategoryId) {
+                    if ($newCategoryId) {
+                        $category = $taskCategoryRepository->find($newCategoryId);
+                        if ($category) {
+                            $changes['category'] = [
+                                'old' => $oldCategoryId,
+                                'new' => $newCategoryId
+                            ];
+                            $task->setCategory($category);
+                        }
+                    } else {
+                        $changes['category'] = [
+                            'old' => $oldCategoryId,
+                            'new' => null
+                        ];
+                        $task->setCategory(null);
+                    }
+                }
+            }
+
+            // Gérer la priorité
+            if (isset($data['priorityId'])) {
+                $oldPriorityId = $task->getPriority()?->getId();
+                $newPriorityId = $data['priorityId'] ? (int)$data['priorityId'] : null;
+                
+                if ($oldPriorityId !== $newPriorityId) {
+                    if ($newPriorityId) {
+                        $priority = $taskPriorityRepository->find($newPriorityId);
+                        if ($priority) {
+                            $changes['priority'] = [
+                                'old' => $oldPriorityId,
+                                'new' => $newPriorityId
+                            ];
+                            $task->setPriority($priority);
+                        }
+                    } else {
+                        $changes['priority'] = [
+                            'old' => $oldPriorityId,
+                            'new' => null
+                        ];
+                        $task->setPriority(null);
+                    }
+                }
+            }
+
             // Créer un enregistrement dans l'historique si des changements ont été effectués
             if (!empty($changes)) {
                 $taskHistory = new TaskHistory();
@@ -283,6 +404,15 @@ final class TasksController extends AbstractController
                     'description' => $task->getDescription(),
                     'dueDate' => $task->getDueDate()?->format(DATE_ATOM),
                     'isArchived' => $task->isArchived(),
+                    'category' => $task->getCategory() ? [
+                        'id' => $task->getCategory()->getId(),
+                        'label' => $task->getCategory()->getLabel(),
+                        'color' => $task->getCategory()->getColor(),
+                    ] : null,
+                    'priority' => $task->getPriority() ? [
+                        'id' => $task->getPriority()->getId(),
+                        'label' => $task->getPriority()->getLabel(),
+                    ] : null,
                 ],
                 'changes' => $changes
             ]);
