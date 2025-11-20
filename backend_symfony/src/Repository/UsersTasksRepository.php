@@ -19,18 +19,23 @@ class UsersTasksRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return Tasks[] Returns an array of Tasks objects for a given user
+     * @return Tasks[] Returns an array of Tasks objects for a given user (excluding archived tasks)
      */
-    public function findTasksByUser(Users $user): array
+    public function findTasksByUser(Users $user, bool $includeArchived = false): array
     {
-        $usersTasks = $this->createQueryBuilder('ut')
+        $qb = $this->createQueryBuilder('ut')
             ->innerJoin('ut.tasks', 't')
             ->addSelect('t')
             ->where('ut.user = :user')
-            ->setParameter('user', $user)
-            ->getQuery()
-            ->getResult()
-        ;
+            ->setParameter('user', $user);
+        
+        // Exclure les tâches archivées par défaut
+        if (!$includeArchived) {
+            $qb->andWhere('t.isArchived = :archived')
+               ->setParameter('archived', false);
+        }
+        
+        $usersTasks = $qb->getQuery()->getResult();
         
         $tasks = [];
         foreach ($usersTasks as $userTask) {

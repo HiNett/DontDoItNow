@@ -328,16 +328,31 @@ final class TasksController extends AbstractController
                 return $this->json(['error' => 'Accès refusé à cette tâche'], 403);
             }
 
-            // Archiver la tâche pour cet utilisateur (UserTask)
-            $userTask->setIsArchived(true);
+            // Archiver la tâche (elle ne sera plus visible pour l'utilisateur)
+            $task->setIsArchived(true);
+            
+            // Créer un enregistrement dans l'historique
+            $taskHistory = new TaskHistory();
+            $taskHistory->setTaskId($task);
+            $taskHistory->setEditDate(new \DateTime());
+            $taskHistory->setEditChanges([
+                'action' => 'archived_by_user',
+                'user_email' => $user->getEmail(),
+                'isArchived' => [
+                    'old' => false,
+                    'new' => true
+                ]
+            ]);
+            
+            $em->persist($taskHistory);
             $em->flush();
 
             return $this->json([
-                'message' => 'Tâche archivée pour cet utilisateur avec succès'
+                'message' => 'Tâche archivée avec succès'
             ]);
 
         } catch (\Exception $e) {
-            error_log("Error archiving task for user: " . $e->getMessage());
+            error_log("Error archiving task: " . $e->getMessage());
             return $this->json([
                 'error' => 'Erreur lors de l\'archivage de la tâche',
                 'message' => $e->getMessage()
