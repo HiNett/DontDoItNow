@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react';
 
 type Categorie = {
   id: number;
-  name: string;
-  description: string | null;
-  dueDate: string | null;
-  isArchived: boolean;
+  label: string;
+  color: string;
 };
 
 const Categorie: React.FC = () => {
@@ -14,7 +12,7 @@ const Categorie: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingCategorie, setEditingCategorie] = useState<Categorie | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', dueDate: '', isArchived: false });
+  const [formData, setFormData] = useState({ label: '', color: '' });
 
   const fetchCategorie = () => {
     const token = localStorage.getItem('authToken');
@@ -67,10 +65,8 @@ const Categorie: React.FC = () => {
   const openEditModal = (categorie: Categorie) => {
     setEditingCategorie(categorie);
     setFormData({
-      name: categorie.name,
-      description: categorie.description || '',
-      dueDate: categorie.dueDate ? categorie.dueDate.substring(0, 16) : '',
-      isArchived: categorie.isArchived
+      label: categorie.label,
+      color: categorie.color
     });
     setShowModal(true);
   };
@@ -78,7 +74,7 @@ const Categorie: React.FC = () => {
   const closeModal = () => {
     setShowModal(false);
     setEditingCategorie(null);
-    setFormData({ name: '', description: '', dueDate: '', isArchived: false });
+    setFormData({ label: '', color: '' });
   };
 
   const handleUpdateCategorie = async () => {
@@ -99,10 +95,8 @@ const Categorie: React.FC = () => {
         },
         credentials: 'include',
         body: JSON.stringify({
-          name: formData.name,
-          description: formData.description || null,
-          dueDate: formData.dueDate || null,
-          isArchived: formData.isArchived
+          label: formData.label,
+          color: formData.color
         })
       });
 
@@ -175,15 +169,8 @@ const Categorie: React.FC = () => {
           <table>
             {categorie.map((categorie) => (
               <tr key={categorie.id} style={{ marginBottom: '1rem' }}>
-                <td><strong>{categorie.name}</strong></td>
-                <td>{categorie.description || <em>No description</em>}</td>
-                <td>
-                  Due Date:{' '}
-                  {categorie.dueDate
-                    ? new Date(categorie.dueDate).toLocaleString()
-                    : <em>None</em>}
-                </td>
-                <td>Archived: {categorie.isArchived ? 'Yes' : 'No'}</td>
+                <td><strong>{categorie.label}</strong></td>
+                <td style={{ paddingLeft: '1rem', background: categorie.color }}>{categorie.color}</td>
                 <td>
                   <button 
                     onClick={() => openEditModal(categorie)}
@@ -236,8 +223,8 @@ const Categorie: React.FC = () => {
               </label>
               <input
                 type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.label}
+                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                 style={{
                   width: '100%',
                   padding: '8px',
@@ -247,46 +234,14 @@ const Categorie: React.FC = () => {
               />
             </div>
 
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px'
-                }}
-              />
-            </div>
 
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
-                Date d'échéance
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.dueDate}
-                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px'
-                }}
-              />
-            </div>
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                 <input
-                  type="checkbox"
-                  checked={formData.isArchived}
-                  onChange={(e) => setFormData({ ...formData, isArchived: e.target.checked })}
+                  type="text"
+                  value={formData.color}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                   style={{ marginRight: '8px' }}
                 />
                 <span style={{ color: 'black' }}>Archiver cette tâche</span>
