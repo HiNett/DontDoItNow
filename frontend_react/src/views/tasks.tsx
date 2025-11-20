@@ -14,7 +14,7 @@ const Tasks: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', dueDate: '', isArchived: false });
+  const [formData, setFormData] = useState({ name: '', description: '', dueDate: '' });
 
   const fetchTasks = () => {
     const token = localStorage.getItem('authToken');
@@ -69,8 +69,7 @@ const Tasks: React.FC = () => {
     setFormData({
       name: task.name,
       description: task.description || '',
-      dueDate: task.dueDate ? task.dueDate.substring(0, 16) : '',
-      isArchived: task.isArchived
+      dueDate: task.dueDate ? task.dueDate.substring(0, 16) : ''
     });
     setShowModal(true);
   };
@@ -78,7 +77,7 @@ const Tasks: React.FC = () => {
   const closeModal = () => {
     setShowModal(false);
     setEditingTask(null);
-    setFormData({ name: '', description: '', dueDate: '', isArchived: false });
+    setFormData({ name: '', description: '', dueDate: '' });
   };
 
   const handleUpdateTask = async () => {
@@ -101,8 +100,7 @@ const Tasks: React.FC = () => {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description || null,
-          dueDate: formData.dueDate || null,
-          isArchived: formData.isArchived
+          dueDate: formData.dueDate || null
         })
       });
 
@@ -277,18 +275,6 @@ const Tasks: React.FC = () => {
                   borderRadius: '4px'
                 }}
               />
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={formData.isArchived}
-                  onChange={(e) => setFormData({ ...formData, isArchived: e.target.checked })}
-                  style={{ marginRight: '8px' }}
-                />
-                <span style={{ color: 'black' }}>Archiver cette tâche</span>
-              </label>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
