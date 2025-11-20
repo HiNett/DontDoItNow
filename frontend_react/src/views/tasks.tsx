@@ -161,44 +161,47 @@ const Tasks: React.FC = () => {
   return (
     
     <div>
-      <nav className="nav">nav</nav>
       <div className="container">
         <h1>Tasks</h1>
+        <button 
+            style={{ cursor: 'pointer' }}
+          >
+            Nouvelle Tâche
+        </button>
         {tasks.length === 0 ? (
           <div>Pas de taches trouvées.</div>
         ) : (
-          <table>
-            {tasks.map((task) => (
-              <tr key={task.id} style={{ marginBottom: '1rem' }}>
-                <td><strong>{task.name}</strong></td>
-                <td>{task.description || <em>No description</em>}</td>
-                <td>
-                  Due Date:{' '}
-                  {task.dueDate
-                    ? new Date(task.dueDate).toLocaleString()
-                    : <em>None</em>}
-                </td>
-                <td>Archived: {task.isArchived ? 'Yes' : 'No'}</td>
-                <td>
-                  <button 
-                    onClick={() => openEditModal(task)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Update
-                  </button>
-                </td>
-                <td>
-                  <button 
-                    onClick={() => handleDeleteTask(task.id)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </table>
-
+            <table>
+              {tasks.map((task) => (
+                <tr key={task.id} style={{ marginBottom: '1rem' }}>
+                  <td><strong>{task.name}</strong></td>
+                  <td>{task.description || <em>No description</em>}</td>
+                  <td>
+                    Due Date:{' '}
+                    {task.dueDate
+                      ? new Date(task.dueDate).toLocaleString()
+                      : <em>None</em>}
+                  </td>
+                  <td>Archived: {task.isArchived ? 'Yes' : 'No'}</td>
+                  <td>
+                    <button 
+                      onClick={() => openEditModal(task)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      Update
+                    </button>
+                  </td>
+                  <td>
+                    <button 
+                      onClick={() => handleDeleteTask(task.id)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </table>
         )}
       </div>
 
