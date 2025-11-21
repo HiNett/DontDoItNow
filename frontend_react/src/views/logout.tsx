@@ -28,9 +28,25 @@ const LogoutBoutton: React.FC = () => {
     };
 
     return (
-        <button type="button" onClick={handleLogout}>
-            déconnexion
-        </button>
+    <button
+      type="button"
+      onClick={handleLogout}
+      style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 18px',
+            backgroundColor: '#363f46ff',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '8px',
+            fontWeight: '500',
+            fontSize: '0.9em',
+            transition: 'all 0.2s',
+            boxShadow: '0 2px 8px rgba(155, 89, 182, 0.3)'
+          }}    >
+      🚪Déconnexion
+    </button>
     );
 };
 

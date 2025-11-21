@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import SearchBar from '../components/SearchBar';
 import { getAuthToken, removeAuthToken } from '../utils/auth';
 import { DateTime } from 'luxon';
-
+import Logout from './logout';
 type Task = {
   id: number;
   name: string;
@@ -517,6 +517,7 @@ const Tasks: React.FC = () => {
             <span style={{ fontSize: '1.2em' }}>➕</span>
             <span>Nouvelle Tâche</span>
           </button>
+
           {userRoles.includes('ROLE_ADMIN') && (
             <a
               href="/admin/dashboard"
@@ -551,6 +552,7 @@ const Tasks: React.FC = () => {
               <span>Admin</span>
             </a>
           )}
+          <Logout />
         </div>
       </div>
 

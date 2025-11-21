@@ -1,4 +1,5 @@
 import React from 'react';
+import Logout from '../views/logout';
 
 const AdminNav: React.FC = () => {
   const currentPath = window.location.pathname;
@@ -68,38 +69,42 @@ const AdminNav: React.FC = () => {
               </a>
             );
           })}
+          
         </div>
-        
-        <a
-          href="/tasks"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 18px',
-            backgroundColor: '#9b59b6',
-            color: 'white',
-            textDecoration: 'none',
-            borderRadius: '8px',
-            fontWeight: '500',
-            fontSize: '0.9em',
-            transition: 'all 0.2s',
-            boxShadow: '0 2px 8px rgba(155, 89, 182, 0.3)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#8e44ad';
-            e.currentTarget.style.transform = 'translateY(-1px)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(155, 89, 182, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#9b59b6';
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(155, 89, 182, 0.3)';
-          }}
-        >
-          <span style={{ fontSize: '1.1em' }}>👤</span>
-          <span>Mes Tâches</span>
-        </a>
+        <div style={{display: 'flex', gap: '15px'}}>
+          <a
+            href="/tasks"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              backgroundColor: '#9b59b6',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '8px',
+              fontWeight: '500',
+              fontSize: '0.9em',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 8px rgba(155, 89, 182, 0.3)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#8e44ad';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(155, 89, 182, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#9b59b6';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(155, 89, 182, 0.3)';
+            }}
+          >
+            <span style={{ fontSize: '1.1em' }}>👤</span>
+            <span>Mes Tâches</span>
+          </a>
+          <Logout />
+        </div>
+
       </div>
     </nav>
   );
