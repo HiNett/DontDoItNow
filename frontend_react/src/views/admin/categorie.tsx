@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import AdminNav from '../../components/AdminNav';
 
 type Categorie = {
   id: number;
@@ -215,17 +216,16 @@ const Categorie: React.FC = () => {
 
   return (
     
-    <div>
-      <nav className="nav">
-        <a href="/admin/dashboard">Dashboard</a>
-        <a href="/admin/tasks">Tasks</a>
-        <a href="/admin/users">Users</a>
-        <a href="/admin/categories">Categories</a>
-        <a href="/admin/priorities">Priorities</a>
-      </nav>
+    <div style={{ backgroundColor: '#1a1d23', minHeight: '100vh', width: '100%' }}>
+      <AdminNav />
 
-      <div className="container">
-        <h1>Catégories</h1>
+      <div className="container" style={{ padding: '30px 50px', width: '100%' }}>
+        <h1 style={{ 
+          fontSize: '2em',
+          fontWeight: '600',
+          color: '#e8eaed',
+          marginBottom: '30px'
+        }}>Catégories</h1>
         <button 
           style={{ cursor: 'pointer', marginBottom: '20px' }}
           onClick={openCreateModal}
@@ -235,7 +235,7 @@ const Categorie: React.FC = () => {
         {categorie.length === 0 ? (
           <div>Pas de catégories trouvées.</div>
         ) : (
-          <table>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
             {categorie.map((categorie) => (
               <tr key={categorie.id} style={{ marginBottom: '1rem' }}>

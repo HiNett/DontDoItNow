@@ -1,19 +1,19 @@
 import React from 'react';
+import AdminNav from '../../components/AdminNav';
 
 const Dashboard: React.FC = () => {
 
   return (
-    <div>
-      <nav className="nav">
-        <a href="/admin/dashboard">Dashboard</a>
-        <a href="/admin/tasks">Tasks</a>
-        <a href="/admin/users">Users</a>
-        <a href="/admin/categories">Categories</a>
-        <a href="/admin/priorities">Priorities</a>
-      </nav>
-      <div className="container">
-        <h1>Admin Dashboard</h1>
-        <p>Bienvenue sur le tableau de bord administrateur !</p>
+    <div style={{ backgroundColor: '#1a1d23', minHeight: '100vh', width: '100%' }}>
+      <AdminNav />
+      <div className="container" style={{ padding: '30px 50px', width: '100%' }}>
+        <h1 style={{ 
+          fontSize: '2em',
+          fontWeight: '600',
+          color: '#e8eaed',
+          marginBottom: '30px'
+        }}>Admin Dashboard</h1>
+        <p style={{ color: '#8b93a1', fontSize: '1.1em' }}>Bienvenue sur le tableau de bord administrateur !</p>
       </div>
     </div>
   );

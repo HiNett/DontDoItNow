@@ -6,6 +6,7 @@ use App\Entity\Tasks as TaskEntity;
 use App\Entity\TaskHistory;
 use App\Entity\UsersTasks;
 use App\Repository\TasksRepository;
+use App\Repository\TaskHistoryRepository;
 use App\Repository\UsersTasksRepository;
 use App\Repository\TaskStatusRepository;
 use App\Repository\TaskCategoryRepository;
@@ -78,12 +79,34 @@ final class TasksController extends AbstractController
         $tasks = $tasksRepository->findAll();
 
         $data = array_map(static function (TaskEntity $task): array {
+            // Récupérer l'utilisateur via UsersTasks
+            $usersTasks = $task->getUsersTasks();
+            $user = $usersTasks?->getUser();
+            
             return [
                 'id' => $task->getId(),
                 'name' => $task->getName(),
                 'description' => $task->getDescription(),
                 'dueDate' => $task->getDueDate()?->format(DATE_ATOM),
                 'isArchived' => $task->isArchived(),
+                'user' => $user ? [
+                    'id' => $user->getId(),
+                    'pseudo' => $user->getPseudo(),
+                    'email' => $user->getEmail(),
+                ] : null,
+                'category' => $task->getCategory() ? [
+                    'id' => $task->getCategory()->getId(),
+                    'label' => $task->getCategory()->getLabel(),
+                    'color' => $task->getCategory()->getColor(),
+                ] : null,
+                'priority' => $task->getPriority() ? [
+                    'id' => $task->getPriority()->getId(),
+                    'label' => $task->getPriority()->getLabel(),
+                ] : null,
+                'status' => $task->getStatus() ? [
+                    'id' => $task->getStatus()->getId(),
+                    'label' => $task->getStatus()->getLabel(),
+                ] : null,
             ];
         }, $tasks);
 
@@ -457,6 +480,147 @@ final class TasksController extends AbstractController
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    // Archiver/Désarchiver une tâche (Admin)
+    #[Route('/api/admin/tasks/{id}/toggle-archive', name: 'task_toggle_archive', methods: ['PATCH'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function toggleArchive(
+        int $id,
+        TasksRepository $tasksRepository,
+        EntityManagerInterface $em,
+        TaskHistoryRepository $taskHistoryRepository
+    ): JsonResponse {
+        try {
+            $task = $tasksRepository->find($id);
+
+            if (!$task) {
+                return $this->json(['error' => 'Tâche non trouvée'], 404);
+            }
+
+            $oldValue = $task->isArchived();
+            $newValue = !$oldValue;
+            
+            $task->setIsArchived($newValue);
+
+            // Créer une entrée dans l'historique
+            $taskHistory = new TaskHistory();
+            $taskHistory->setTaskId($task);
+            $taskHistory->setEditDate(new \DateTime());
+            $taskHistory->setEditChanges([
+                'isArchived' => [
+                    'old' => $oldValue,
+                    'new' => $newValue
+                ]
+            ]);
+            
+            $em->persist($taskHistory);
+            $em->flush();
+
+            return $this->json([
+                'message' => $newValue ? 'Tâche archivée avec succès' : 'Tâche désarchivée avec succès',
+                'isArchived' => $newValue
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("Error toggling archive status: " . $e->getMessage());
+            return $this->json([
+                'error' => 'Erreur lors du changement de statut',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Récupérer l'historique d'une tâche (Admin)
+    #[Route('/api/admin/tasks/{id}/history', name: 'task_history', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function getHistory(
+        int $id,
+        TasksRepository $tasksRepository,
+        TaskHistoryRepository $taskHistoryRepository
+    ): JsonResponse {
+        $task = $tasksRepository->find($id);
+
+        if (!$task) {
+            return $this->json(['error' => 'Tâche non trouvée'], 404);
+        }
+
+        $historyEntries = $taskHistoryRepository->findBy(
+            ['taskId' => $task],
+            ['editDate' => 'DESC']
+        );
+
+        $data = array_map(static function (TaskHistory $history): array {
+            return [
+                'id' => $history->getId(),
+                'changedAt' => $history->getEditDate()?->format(DATE_ATOM),
+                'changes' => $history->getEditChanges(),
+            ];
+        }, $historyEntries);
+
+        return $this->json($data);
+    }
+
+    // Rechercher des tâches (Admin)
+    #[Route('/api/admin/tasks/search', name: 'tasks_search', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function search(Request $request, TasksRepository $tasksRepository): JsonResponse
+    {
+        $query = $request->query->get('q', '');
+        
+        if (empty(trim($query))) {
+            return $this->json([]);
+        }
+
+        // Recherche dans la base de données
+        $tasks = $tasksRepository->createQueryBuilder('t')
+            ->leftJoin('t.usersTasks', 'ut')
+            ->leftJoin('ut.user', 'u')
+            ->leftJoin('t.category', 'c')
+            ->leftJoin('t.priority', 'p')
+            ->leftJoin('t.status', 's')
+            ->where('t.name LIKE :query')
+            ->orWhere('t.description LIKE :query')
+            ->orWhere('u.pseudo LIKE :query')
+            ->orWhere('u.Email LIKE :query')
+            ->setParameter('query', '%' . $query . '%')
+            ->orderBy('t.id', 'DESC')
+            ->setMaxResults(50)
+            ->getQuery()
+            ->getResult();
+
+        $data = array_map(static function (TaskEntity $task): array {
+            $usersTasks = $task->getUsersTasks();
+            $user = $usersTasks?->getUser();
+            
+            return [
+                'id' => $task->getId(),
+                'name' => $task->getName(),
+                'description' => $task->getDescription(),
+                'dueDate' => $task->getDueDate()?->format(DATE_ATOM),
+                'isArchived' => $task->isArchived(),
+                'user' => $user ? [
+                    'id' => $user->getId(),
+                    'pseudo' => $user->getPseudo(),
+                    'email' => $user->getEmail(),
+                ] : null,
+                'category' => $task->getCategory() ? [
+                    'id' => $task->getCategory()->getId(),
+                    'label' => $task->getCategory()->getLabel(),
+                    'color' => $task->getCategory()->getColor(),
+                ] : null,
+                'priority' => $task->getPriority() ? [
+                    'id' => $task->getPriority()->getId(),
+                    'label' => $task->getPriority()->getLabel(),
+                ] : null,
+                'status' => $task->getStatus() ? [
+                    'id' => $task->getStatus()->getId(),
+                    'label' => $task->getStatus()->getLabel(),
+                ] : null,
+            ];
+        }, $tasks);
+
+        return $this->json($data);
     }
 
     #[Route('/api/admin/task/{id}', name: 'task_delete_admin', methods: ['DELETE'])]
