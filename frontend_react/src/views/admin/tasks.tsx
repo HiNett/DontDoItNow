@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminNav from '../../components/AdminNav';
 import SearchBar from '../../components/SearchBar';
+import { getAuthToken, removeAuthToken } from '../../utils/auth';
 import { DateTime } from 'luxon';
 
 type User = {
@@ -73,7 +74,7 @@ const Tasks: React.FC = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   const fetchTasks = () => {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     
     if (!token) {
       setError('Non authentifié. Veuillez vous connecter.');
@@ -91,7 +92,7 @@ const Tasks: React.FC = () => {
       .then(async (res) => {
         if (!res.ok) {
           if (res.status === 401) {
-            localStorage.removeItem('authToken');
+            removeAuthToken();
             throw new Error('Session expirée. Veuillez vous reconnecter.');
           }
           const text = await res.text();
@@ -118,7 +119,7 @@ const Tasks: React.FC = () => {
   };
 
   const fetchCategories = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) return;
 
     try {
@@ -139,7 +140,7 @@ const Tasks: React.FC = () => {
   };
 
   const fetchPriorities = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) return;
 
     try {
@@ -167,7 +168,7 @@ const Tasks: React.FC = () => {
 
   const handleSearch = async (query: string) => {
     setCurrentSearchQuery(query);
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     
     if (!token) {
       return;
@@ -193,7 +194,7 @@ const Tasks: React.FC = () => {
 
       if (!response.ok) {
         if (response.status === 401) {
-          localStorage.removeItem('authToken');
+          removeAuthToken();
           throw new Error('Session expirée. Veuillez vous reconnecter.');
         }
         throw new Error('Erreur lors de la recherche');
@@ -227,7 +228,7 @@ const Tasks: React.FC = () => {
   const handleUpdateTask = async () => {
     if (!editingTask) return;
 
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       alert('Non authentifié');
       return;
@@ -270,7 +271,7 @@ const Tasks: React.FC = () => {
   };
 
   const handleToggleArchive = async (taskId: number, currentStatus: boolean) => {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       alert('Non authentifié');
       return;
@@ -312,7 +313,7 @@ const Tasks: React.FC = () => {
       return;
     }
 
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       alert('Non authentifié');
       return;
@@ -345,7 +346,7 @@ const Tasks: React.FC = () => {
   };
 
   const handleShowHistory = async (taskId: number) => {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       alert('Non authentifié');
       return;
