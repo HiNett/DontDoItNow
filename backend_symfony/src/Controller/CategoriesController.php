@@ -116,6 +116,11 @@ final class CategoriesController extends AbstractController
             return $this->json(['error' => 'Category not found'], 404);
         }
 
+        // Mettre à null la catégorie des tâches associées
+        foreach ($category->getTasks() as $task) {
+            $task->setCategory(null);
+        }
+
         $em->remove($category);
         $em->flush();
 

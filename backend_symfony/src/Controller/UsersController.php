@@ -46,8 +46,13 @@ final class UsersController extends AbstractController
         $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
         $user->setPassword($hashedPassword);
         
-        // Définir le rôle (0 = ROLE_USER, 1 = ROLE_ADMIN)
+        // Définir le rôle (0 = ROLE_USER uniquement, interdire 1 = ROLE_ADMIN)
         $role = isset($data['role']) ? (int)$data['role'] : 0;
+        if ($role === 1) {
+            return $this->json([
+                'error' => 'Impossible de créer un administrateur depuis l\'interface. Veuillez utiliser la base de données directement.'
+            ], 403);
+        }
         $user->setRole($role);
 
         $em->persist($user);
@@ -139,9 +144,26 @@ final class UsersController extends AbstractController
             $user->setPassword($hashedPassword);
         }
 
-        // Mise à jour du rôle
+        // Mise à jour du rôle (interdire de MODIFIER le rôle d'un admin ou de PASSER à admin)
         if (isset($data['role'])) {
-            $user->setRole((int)$data['role']);
+            $newRole = (int)$data['role'];
+            $currentRole = $user->getRole();
+            
+            // Bloquer si on tente de changer le rôle d'un admin (1 -> 0 ou garder 1)
+            // ou de passer à admin (0 -> 1)
+            if ($currentRole === 1 && $newRole !== $currentRole) {
+                return $this->json([
+                    'error' => 'Impossible de modifier le rôle d\'un administrateur depuis l\'interface. Veuillez utiliser la base de données directement.'
+                ], 403);
+            }
+            
+            if ($newRole === 1 && $currentRole !== 1) {
+                return $this->json([
+                    'error' => 'Impossible de définir le rôle administrateur depuis l\'interface. Veuillez utiliser la base de données directement.'
+                ], 403);
+            }
+            
+            $user->setRole($newRole);
         }
 
         $em->flush();
@@ -164,6 +186,13 @@ final class UsersController extends AbstractController
 
         if (!$user) {
             return $this->json(['error' => 'User not found'], 404);
+        }
+
+        // Empêcher la suppression d'un administrateur
+        if (in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+            return $this->json([
+                'error' => 'Impossible de supprimer un administrateur depuis l\'interface. Veuillez utiliser la base de données directement.'
+            ], 403);
         }
 
         $em->remove($user);
