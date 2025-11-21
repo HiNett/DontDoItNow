@@ -22,8 +22,8 @@ const LogoutBoutton: React.FC = () => {
                 console.log("Erreur lors de la déconnexion:", error.message);
             })
             .finally(() => {
-                // Rediriger vers login dans tous les cas
-                navigate("/login");
+                // Rediriger vers login avec un état indiquant la déconnexion
+                navigate("/login", { state: { fromLogout: true } });
             });
     };
 
