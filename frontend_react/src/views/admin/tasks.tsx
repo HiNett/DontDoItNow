@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminNav from '../../components/AdminNav';
 import SearchBar from '../../components/SearchBar';
+import { DateTime } from 'luxon';
 
 type User = {
   id: number;
@@ -796,11 +797,11 @@ const Tasks: React.FC = () => {
                         {task.dueDate && (
                           <div style={{ 
                             fontSize: '0.8em',
-                            color: '#ff6b6b',
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '4px',
-                            backgroundColor: 'rgba(255, 107, 107, 0.15)',
+                            backgroundColor:new Date(task.dueDate).toLocaleDateString('fr-FR') < DateTime.now().toLocaleString(DateTime.DATE_FULL) ? '#c20000ff' : '#008f3bff',
+                            color: 'white',
                             padding: '3px 10px',
                             borderRadius: '6px',
                             border: '1px solid rgba(255, 107, 107, 0.3)'
