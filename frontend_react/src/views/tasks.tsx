@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import SearchBar from '../components/SearchBar';
 
 type Task = {
   id: number;
@@ -30,9 +31,15 @@ type Priority = {
 
 const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]); // Cache pour toutes les tâches
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [currentSearchQuery, setCurrentSearchQuery] = useState('');
+  
+  // Filtres
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedPriority, setSelectedPriority] = useState<string>(''); // '' = toutes, ou id de priorité
 
   // Catégories et priorités
   const [categories, setCategories] = useState<Category[]>([]);
@@ -80,7 +87,10 @@ const Tasks: React.FC = () => {
         return res.json();
       })
       .then((data) => {
-        setTasks(data);
+        // S'assurer que data est un tableau
+        const tasksArray = Array.isArray(data) ? data : [];
+        setTasks(tasksArray);
+        setAllTasks(tasksArray); // Sauvegarder toutes les tâches dans le cache
         setLoading(false);
       })
       .catch((err) => {
@@ -149,6 +159,48 @@ const Tasks: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching user info:', err);
+    }
+  };
+
+  const handleSearch = async (query: string) => {
+    setCurrentSearchQuery(query);
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      return;
+    }
+
+    // Si la recherche est vide, restaurer toutes les tâches depuis le cache
+    if (!query.trim()) {
+      const tasksArray = Array.isArray(allTasks) ? allTasks : [];
+      setTasks(tasksArray);
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/tasks/search?q=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('authToken');
+          throw new Error('Session expirée. Veuillez vous reconnecter.');
+        }
+        throw new Error('Erreur lors de la recherche');
+      }
+
+      const data = await response.json();
+      // S'assurer que data est un tableau
+      const tasksArray = Array.isArray(data) ? data : [];
+      setTasks(tasksArray);
+    } catch (err: any) {
+      console.error('Search error:', err);
+      setError(err.message || 'Erreur lors de la recherche');
     }
   };
 
@@ -226,7 +278,11 @@ const Tasks: React.FC = () => {
 
       await response.json();
       closeCreateModal();
-      fetchTasks();
+      await fetchTasks();
+      // Réappliquer la recherche si nécessaire
+      if (currentSearchQuery) {
+        handleSearch(currentSearchQuery);
+      }
     } catch (err: any) {
       alert(err.message || 'Erreur lors de la création de la tâche');
     }
@@ -266,7 +322,11 @@ const Tasks: React.FC = () => {
       await response.json();
       
       closeModal();
-      fetchTasks(); // Recharger la liste des tâches
+      await fetchTasks(); // Recharger la liste des tâches
+      // Réappliquer la recherche si nécessaire
+      if (currentSearchQuery) {
+        handleSearch(currentSearchQuery);
+      }
     } catch (err: any) {
       alert(err.message || 'Erreur lors de la mise à jour');
     }
@@ -297,19 +357,63 @@ const Tasks: React.FC = () => {
         throw new Error(errorData.error || 'Erreur lors de la suppression');
       }
 
-      fetchTasks(); // Recharger la liste des tâches
+      await fetchTasks(); // Recharger la liste des tâches
+      // Réappliquer la recherche si nécessaire
+      if (currentSearchQuery) {
+        handleSearch(currentSearchQuery);
+      }
     } catch (err: any) {
       alert(err.message || 'Erreur lors de la suppression');
     }
   };
 
-  // Grouper les tâches par catégorie
+  // Appliquer les filtres
+  const filteredTasks = React.useMemo(() => {
+    // S'assurer que tasks est un tableau
+    const tasksArray = Array.isArray(tasks) ? tasks : [];
+
+    return tasksArray.filter(task => {
+      // Filtre par catégorie
+      if (selectedCategory) {
+        if (selectedCategory === 'none') {
+          // Sans catégorie
+          if (task.category !== null) {
+            return false;
+          }
+        } else {
+          // Catégorie spécifique
+          if (!task.category || task.category.id.toString() !== selectedCategory) {
+            return false;
+          }
+        }
+      }
+
+      // Filtre par priorité
+      if (selectedPriority) {
+        if (selectedPriority === 'none') {
+          // Sans priorité
+          if (task.priority !== null) {
+            return false;
+          }
+        } else {
+          // Priorité spécifique
+          if (!task.priority || task.priority.id.toString() !== selectedPriority) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [tasks, selectedCategory, selectedPriority]);
+
+  // Grouper les tâches par catégorie (après filtrage)
   const groupedTasks = React.useMemo(() => {
     const groups: { [key: string]: Task[] } = {
       'Sans catégorie': []
     };
 
-    tasks.forEach(task => {
+    filteredTasks.forEach(task => {
       if (task.category) {
         const categoryLabel = task.category.label;
         if (!groups[categoryLabel]) {
@@ -322,7 +426,7 @@ const Tasks: React.FC = () => {
     });
 
     return groups;
-  }, [tasks]);
+  }, [filteredTasks]);
 
   if (loading) return (
     <div style={{ 
@@ -449,7 +553,135 @@ const Tasks: React.FC = () => {
       </div>
 
       <div style={{ padding: '30px 50px', width: '100%', margin: '0 auto' }}>
-        {tasks.length === 0 ? (
+        {/* Barre de recherche et filtres */}
+        <div style={{
+          display: 'flex',
+          gap: '15px',
+          marginBottom: '25px',
+          alignItems: 'flex-start'
+        }}>
+          <div style={{ flex: 1 }}>
+            <SearchBar 
+              onSearch={handleSearch} 
+              placeholder="Rechercher dans vos tâches par nom, description, catégorie ou priorité..."
+            />
+          </div>
+          
+          {/* Filtres */}
+          <div style={{
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center'
+          }}>
+            {/* Filtre par catégorie */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              style={{
+                padding: '14px 20px',
+                fontSize: '0.95em',
+                border: '2px solid #2d3139',
+                borderRadius: '12px',
+                backgroundColor: '#252930',
+                color: '#e8eaed',
+                outline: 'none',
+                cursor: 'pointer',
+                minWidth: '180px',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#3498db';
+                e.target.style.boxShadow = '0 4px 12px rgba(52, 152, 219, 0.3)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#2d3139';
+                e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+              }}
+            >
+              <option value="">🏷️ Toutes les catégories</option>
+              <option value="none">📝 Sans catégorie</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id.toString()}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
+
+            {/* Filtre par priorité */}
+            <select
+              value={selectedPriority}
+              onChange={(e) => setSelectedPriority(e.target.value)}
+              style={{
+                padding: '14px 20px',
+                fontSize: '0.95em',
+                border: '2px solid #2d3139',
+                borderRadius: '12px',
+                backgroundColor: '#252930',
+                color: '#e8eaed',
+                outline: 'none',
+                cursor: 'pointer',
+                minWidth: '180px',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#3498db';
+                e.target.style.boxShadow = '0 4px 12px rgba(52, 152, 219, 0.3)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#2d3139';
+                e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+              }}
+            >
+              <option value="">⚡ Toutes les priorités</option>
+              <option value="none">📝 Sans priorité</option>
+              {priorities.map((priority) => (
+                <option key={priority.id} value={priority.id.toString()}>
+                  ⚡ {priority.label}
+                </option>
+              ))}
+            </select>
+
+            {/* Bouton pour réinitialiser les filtres */}
+            {(selectedCategory || selectedPriority) && (
+              <button
+                onClick={() => {
+                  setSelectedCategory('');
+                  setSelectedPriority('');
+                }}
+                style={{
+                  padding: '14px 20px',
+                  fontSize: '0.95em',
+                  border: '2px solid #2d3139',
+                  borderRadius: '12px',
+                  backgroundColor: '#1e2127',
+                  color: '#8b93a1',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#3a3f4b';
+                  e.currentTarget.style.color = '#e8eaed';
+                  e.currentTarget.style.backgroundColor = '#252930';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#2d3139';
+                  e.currentTarget.style.color = '#8b93a1';
+                  e.currentTarget.style.backgroundColor = '#1e2127';
+                }}
+              >
+                <span>🔄</span>
+                <span>Réinitialiser</span>
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {filteredTasks.length === 0 ? (
           <div style={{
             textAlign: 'center',
             padding: '80px 20px',
@@ -457,12 +689,16 @@ const Tasks: React.FC = () => {
             borderRadius: '16px',
             border: '2px dashed #2d3139'
           }}>
-            <div style={{ fontSize: '4em', marginBottom: '20px' }}>📭</div>
+            <div style={{ fontSize: '4em', marginBottom: '20px' }}>
+              {currentSearchQuery.trim() ? '🔍' : '📭'}
+            </div>
             <div style={{ fontSize: '1.3em', color: '#e8eaed', marginBottom: '10px', fontWeight: '600' }}>
-              Aucune tâche pour le moment
+              {currentSearchQuery.trim() ? 'Aucun résultat trouvé' : 'Aucune tâche pour le moment'}
             </div>
             <div style={{ fontSize: '1em', color: '#8b93a1', marginBottom: '30px' }}>
-              Commencez par créer votre première tâche !
+              {currentSearchQuery.trim() || selectedCategory || selectedPriority
+                ? `Aucune tâche ne correspond à vos critères de recherche/filtrage.` 
+                : 'Commencez par créer votre première tâche !'}
             </div>
             <button 
               onClick={openCreateModal}
@@ -478,7 +714,7 @@ const Tasks: React.FC = () => {
                 boxShadow: '0 4px 12px rgba(46, 204, 113, 0.3)'
               }}
             >
-              ➕ Créer ma première tâche
+              ➕ {currentSearchQuery.trim() ? 'Créer cette tâche' : 'Créer ma première tâche'}
             </button>
           </div>
         ) : (

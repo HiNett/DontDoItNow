@@ -72,6 +72,83 @@ final class TasksController extends AbstractController
         }
     }
 
+    #[Route('/api/tasks/search', name: 'tasks_search_user', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function searchUserTasks(Request $request, UsersTasksRepository $usersTasksRepository): JsonResponse
+    {
+        try {
+            $user = $this->getUser();
+            
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur non authentifié'], 401);
+            }
+
+            $query = $request->query->get('q', '');
+            
+            if (empty(trim($query))) {
+                return $this->json([]);
+            }
+
+            // Récupérer toutes les tâches de l'utilisateur
+            $userTasks = $usersTasksRepository->findTasksByUser($user);
+
+            // Filtrer les tâches selon la recherche
+            $filteredTasks = array_filter($userTasks, function (TaskEntity $task) use ($query) {
+                $queryLower = strtolower(trim($query));
+                
+                // Recherche dans le nom (insensible à la casse)
+                $nameMatch = stripos($task->getName(), $query) !== false;
+                
+                // Recherche dans la description (si elle existe)
+                $descriptionMatch = false;
+                if ($task->getDescription() !== null && $task->getDescription() !== '') {
+                    $descriptionMatch = stripos($task->getDescription(), $query) !== false;
+                }
+                
+                // Recherche dans la catégorie (si elle existe)
+                $categoryMatch = false;
+                if ($task->getCategory() !== null) {
+                    $categoryMatch = stripos($task->getCategory()->getLabel(), $query) !== false;
+                }
+                
+                // Recherche dans la priorité (si elle existe)
+                $priorityMatch = false;
+                if ($task->getPriority() !== null) {
+                    $priorityMatch = stripos($task->getPriority()->getLabel(), $query) !== false;
+                }
+                
+                return $nameMatch || $descriptionMatch || $categoryMatch || $priorityMatch;
+            });
+
+            $data = array_map(static function (TaskEntity $task): array {
+                return [
+                    'id' => $task->getId(),
+                    'name' => $task->getName(),
+                    'description' => $task->getDescription(),
+                    'dueDate' => $task->getDueDate()?->format(DATE_ATOM),
+                    'isArchived' => $task->isArchived(),
+                    'category' => $task->getCategory() ? [
+                        'id' => $task->getCategory()->getId(),
+                        'label' => $task->getCategory()->getLabel(),
+                        'color' => $task->getCategory()->getColor(),
+                    ] : null,
+                    'priority' => $task->getPriority() ? [
+                        'id' => $task->getPriority()->getId(),
+                        'label' => $task->getPriority()->getLabel(),
+                    ] : null,
+                ];
+            }, $filteredTasks);
+
+            return $this->json($data);
+        } catch (\Exception $e) {
+            error_log("Error searching user tasks: " . $e->getMessage());
+            return $this->json([
+                'error' => 'Erreur lors de la recherche',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     #[Route('/api/admin/tasks/all', name: 'tasks_list_all', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
     public function listAll(TasksRepository $tasksRepository): JsonResponse
