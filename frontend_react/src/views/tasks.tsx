@@ -832,13 +832,15 @@ const Tasks: React.FC = () => {
                             {task.priority && (
                               <span style={{
                                 padding: '4px 10px',
-                                backgroundColor: '#f39c12',
+                                backgroundColor: '#ffae00ff',
                                 color: 'white',
                                 borderRadius: '6px',
                                 fontSize: '0.75em',
                                 fontWeight: '600',
                                 marginLeft: '10px',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+
                               }}>
                                 ⚡ {task.priority.label}
                               </span>
@@ -895,7 +897,7 @@ const Tasks: React.FC = () => {
                               }}
                               style={{
                                 padding: '6px 12px',
-                                backgroundColor: '#3498db',
+                                backgroundColor: '#f39c12',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '6px',
@@ -904,8 +906,8 @@ const Tasks: React.FC = () => {
                                 fontWeight: '500',
                                 transition: 'all 0.2s'
                               }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2980b9'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3498db'}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f39c12'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f39c12'}
                             >
                               ✏️
                             </button>

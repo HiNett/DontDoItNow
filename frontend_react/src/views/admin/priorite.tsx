@@ -215,50 +215,166 @@ const Priorite: React.FC = () => {
     <div style={{ backgroundColor: '#1a1d23', minHeight: '100vh', width: '100%' }}>
       <AdminNav />
       <div className="container" style={{ padding: '30px 50px', width: '100%' }}>
-        <h1 style={{ 
-          fontSize: '2em',
-          fontWeight: '600',
-          color: '#e8eaed',
-          marginBottom: '30px'
-        }}>Priorités</h1>
-        <button 
-          style={{ cursor: 'pointer', marginBottom: '20px' }}
-          onClick={openCreateModal}
-        >
-          Nouvelle Priorité
-        </button>
-        {priorite.length === 0 ? (
-          <div>Pas de priorités trouvées.</div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <tbody>
-            {priorite.map((priorite) => (
-              <tr key={priorite.id} style={{ marginBottom: '1rem' }}>
-                <td><strong>{priorite.label}</strong></td>
-                <td>
-                  <button 
-                    onClick={() => openEditModal(priorite)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Modifier
-                  </button>
-                </td>
-                <td>
-                  <button 
-                    onClick={() => handleDeletePriorite(priorite.id)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Supprimer
-                  </button>
-                </td>
-              </tr>
-            ))}
-            </tbody>
-          </table>
+        <div style={{ display: 'flex',gap:'20px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+          <h1 style={{ 
+            fontSize: '2em',
+            fontWeight: '600',
+            color: '#e8eaed',
+            marginBottom: '30px'
+          }}>
+            ⚡ Gestion des priorités
+          </h1>
+          <button 
+            onClick={openCreateModal}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#2ecc71',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '0.95em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 8px rgba(46, 204, 113, 0.3)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#27ae60';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(46, 204, 113, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#2ecc71';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(46, 204, 113, 0.3)';
+            }}
+          >
+            <span style={{ fontSize: '1.2em' }}>➕</span>
+            <span>Nouvelle priorité</span>
+          </button>
+        </div>
+        
 
+        {priorite.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            backgroundColor: '#252930',
+            borderRadius: '12px',
+            border: '1px solid #2d3139'
+          }}>
+          </div>
+        ) : (
+          <div style={{    
+            overflow: 'hidden', 
+            width: '100%'
+          }}>
+            <div style={{ overflowX: 'auto',width: '70%' ,backgroundColor: '#252930',border: '1px solid #2d3139',borderRadius: '12px',}}>
+              <table style={{ 
+                width: '100%', 
+                borderCollapse: 'collapse'
+              }}>
+                <thead>
+                  <tr style={{ 
+                    backgroundColor: '#2d3139',
+                    borderBottom: '2px solid #3a3f4b'
+                  }}>
+                    <th style={{ 
+                      padding: '16px',
+                      textAlign: 'left',
+                      fontWeight: '600',
+                      color: '#8b93a1',
+                      fontSize: '0.85em',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>⚡Priorité</th>
+                    <th style={{ 
+                      padding: '16px',
+                      textAlign: 'center',
+                      fontWeight: '600',
+                      color: '#8b93a1',
+                      fontSize: '0.85em',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      minWidth: '180px'
+                    }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {priorite.map((priorite) => (
+                    <tr key={priorite.id} style={{ marginBottom: '1rem' }}>
+                      <td style={{ padding: '20px'}}><strong>{priorite.label}</strong></td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '20px',justifyContent: 'center' }}>
+                          <button 
+                            onClick={() => openEditModal(priorite)}
+                            style={{
+                              padding: '7px 20px',
+                              fontSize: '0.8em',
+                              border: 'none',
+                              borderRadius: '6px',
+                              backgroundColor: '#f39c12',
+                              color: 'white',
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                              transition: 'all 0.2s',
+                              boxShadow: '0 2px 4px rgba(243, 156, 18, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f39c12';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(243, 156, 18, 0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f39c12';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(243, 156, 18, 0.2)';
+                            }}
+                            title="Modifier"
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            onClick={() => handleDeletePriorite(priorite.id)}
+                            style={{
+                              padding: '7px 20px',
+                              fontSize: '0.8em',
+                              border: 'none',
+                              borderRadius: '6px',
+                              backgroundColor: '#e74c3c',
+                              color: 'white',
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                              transition: 'all 0.2s',
+                              boxShadow: '0 2px 4px rgba(231, 76, 60, 0.2)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#c0392b';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(231, 76, 60, 0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#e74c3c';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(231, 76, 60, 0.2)';
+                            }}
+                            title="Supprimer définitivement"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </div>
-
       {/* Modal pour créer une priorité */}
       {showCreateModal && (
         <div style={{
@@ -274,16 +390,17 @@ const Priorite: React.FC = () => {
           zIndex: 1000
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: 'black',
+            color: 'white',
             padding: '30px',
             borderRadius: '8px',
             minWidth: '400px',
             maxWidth: '600px'
           }}>
-            <h2 style={{ color: 'black' }}>Créer une nouvelle priorité</h2>
+            <h2 >Créer une nouvelle priorité</h2>
             
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                 Label de la priorité *
               </label>
               <input
@@ -347,16 +464,17 @@ const Priorite: React.FC = () => {
           zIndex: 1000
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: 'black',
+            color: 'white',
             padding: '30px',
             borderRadius: '8px',
             minWidth: '400px',
             maxWidth: '600px'
           }}>
-            <h2 style={{ color: 'black' }}>Modifier la priorité</h2>
+            <h2 >Modifier la priorité</h2>
             
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                 Label de la priorité *
               </label>
               <input

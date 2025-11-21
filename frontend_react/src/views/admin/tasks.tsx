@@ -594,9 +594,9 @@ const Tasks: React.FC = () => {
                           borderRadius: '20px',
                           fontSize: '0.85em',
                           fontWeight: '600',
-                          backgroundColor: '#f39c12',
+                          backgroundColor: '#ffae00ff',
                           color: 'white',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
                         }}>
                           ⚡ {task.priority.label}
                         </span>
@@ -653,22 +653,22 @@ const Tasks: React.FC = () => {
                               fontSize: '0.8em',
                               border: 'none',
                               borderRadius: '6px',
-                              backgroundColor: '#9b59b6',
+                              backgroundColor: '#f39c12',
                               color: 'white',
                               cursor: 'pointer',
                               fontWeight: '500',
                               transition: 'all 0.2s',
-                              boxShadow: '0 2px 4px rgba(155, 89, 182, 0.2)'
+                              boxShadow: '0 2px 4px rgba(243, 156, 18, 0.2)'
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#8e44ad';
+                              e.currentTarget.style.backgroundColor = '#f39c12';
                               e.currentTarget.style.transform = 'translateY(-1px)';
-                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(155, 89, 182, 0.3)';
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(243, 156, 18, 0.3)';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#9b59b6';
+                              e.currentTarget.style.backgroundColor = '#f39c12';
                               e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(155, 89, 182, 0.2)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(243, 156, 18, 0.2)';
                             }}
                             title="Modifier"
                           >
@@ -684,22 +684,22 @@ const Tasks: React.FC = () => {
                               fontSize: '0.8em',
                               border: 'none',
                               borderRadius: '6px',
-                              backgroundColor: '#f39c12',
+                              backgroundColor: '#7d7b7eff',
                               color: 'white',
                               cursor: 'pointer',
                               fontWeight: '500',
                               transition: 'all 0.2s',
-                              boxShadow: '0 2px 4px rgba(243, 156, 18, 0.2)'
+                              boxShadow: '0 2px 4px rgba(125, 123, 126, 0.2)'
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#e67e22';
+                              e.currentTarget.style.backgroundColor = '#7d7b7eff';
                               e.currentTarget.style.transform = 'translateY(-1px)';
-                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(243, 156, 18, 0.3)';
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(125, 123, 126, 0.3)';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#f39c12';
+                              e.currentTarget.style.backgroundColor = '#7d7b7eff';
                               e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(243, 156, 18, 0.2)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(125, 123, 126, 0.2)';
                             }}
                             title={task.isArchived ? 'Désarchiver' : 'Archiver'}
                           >

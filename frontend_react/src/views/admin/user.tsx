@@ -233,14 +233,48 @@ const Users: React.FC = () => {
       <AdminNav />
 
       <div className="container" style={{ padding: '30px 50px', width: '100%' }}>
-        <h1 style={{ 
-          fontSize: '2em',
-          fontWeight: '600',
-          color: '#e8eaed',
-          marginBottom: '30px'
-        }}>
-          👥 Gestion des utilisateurs
-        </h1>
+        <div style={{ display: 'flex',gap:'20px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+          <h1 style={{ 
+            fontSize: '2em',
+            fontWeight: '600',
+            color: '#e8eaed',
+            marginBottom: '30px'
+          }}>
+            👥 Gestion des utilisateurs
+          </h1>
+          <button 
+            onClick={openCreateModal}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#2ecc71',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '0.95em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 8px rgba(46, 204, 113, 0.3)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#27ae60';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(46, 204, 113, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#2ecc71';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(46, 204, 113, 0.3)';
+            }}
+          >
+            <span style={{ fontSize: '1.2em' }}>➕</span>
+            <span>Nouvel utilisateur</span>
+          </button>
+        </div>
+        
 
         {users.length === 0 ? (
           <div style={{
@@ -310,9 +344,9 @@ const Users: React.FC = () => {
                 <tbody>
                   {users.map((user) => (
                     <tr key={user.id} style={{ marginBottom: '1rem' }}>
-                      <td><strong>{user.pseudo}</strong></td>
-                      <td>{user.email}</td>
-                      <td>
+                      <td style={{ padding: '20px'}}><strong>{user.pseudo}</strong></td>
+                      <td style={{ padding: '20px'}}>{user.email}</td>
+                      <td style={{ padding: '20px'}}>
                         <span style={{
                           padding: '4px 8px',
                           borderRadius: '4px',
@@ -324,31 +358,30 @@ const Users: React.FC = () => {
                         </span>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '6px' }}>
+                        <div style={{ display: 'flex', gap: '20px',justifyContent: 'center' }}>
                           <button 
                             onClick={() => openEditModal(user)}
                             style={{
-                              flex: 1,
-                              padding: '7px 10px',
+                              padding: '7px 20px',
                               fontSize: '0.8em',
                               border: 'none',
                               borderRadius: '6px',
-                              backgroundColor: '#9b59b6',
+                              backgroundColor: '#f39c12',
                               color: 'white',
                               cursor: 'pointer',
                               fontWeight: '500',
                               transition: 'all 0.2s',
-                              boxShadow: '0 2px 4px rgba(155, 89, 182, 0.2)'
+                              boxShadow: '0 2px 4px rgba(243, 156, 18, 0.3)'
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#8e44ad';
+                              e.currentTarget.style.backgroundColor = '#f39c12';
                               e.currentTarget.style.transform = 'translateY(-1px)';
-                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(155, 89, 182, 0.3)';
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(243, 156, 18, 0.3)';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#9b59b6';
+                              e.currentTarget.style.backgroundColor = '#f39c12';
                               e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(155, 89, 182, 0.2)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(243, 156, 18, 0.2)';
                             }}
                             title="Modifier"
                           >
@@ -357,8 +390,7 @@ const Users: React.FC = () => {
                           <button 
                             onClick={() => handleDeleteUser(user.id)}
                             style={{
-                              flex: 1,
-                              padding: '7px 10px',
+                              padding: '7px 20px',
                               fontSize: '0.8em',
                               border: 'none',
                               borderRadius: '6px',
@@ -409,16 +441,17 @@ const Users: React.FC = () => {
           zIndex: 1000
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: 'black',
+            color: 'white',
             padding: '30px',
-            borderRadius: '8px',
+            borderRadius: '10px',
             minWidth: '400px',
             maxWidth: '600px'
           }}>
-            <h2 style={{ color: 'black' }}>Créer un nouvel utilisateur</h2>
+            <h2 style={{ color: 'white' }}>Créer un nouvel utilisateur</h2>
             
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'white' }}>
                 Pseudo *
               </label>
               <input
@@ -437,7 +470,7 @@ const Users: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'white' }}>
                 Email *
               </label>
               <input
@@ -456,7 +489,7 @@ const Users: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'white' }}>
                 Mot de passe *
               </label>
               <input
@@ -474,7 +507,7 @@ const Users: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'white' }}>
                 Rôle *
               </label>
               <select
@@ -539,16 +572,17 @@ const Users: React.FC = () => {
           zIndex: 1000
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: 'black',
+            color: 'white',
             padding: '30px',
-            borderRadius: '8px',
+            borderRadius: '10px',
             minWidth: '400px',
             maxWidth: '600px'
           }}>
-            <h2 style={{ color: 'black' }}>Modifier l'utilisateur</h2>
+            <h2 style={{ color: 'white' }}>Modifier l'utilisateur</h2>
             
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                 Pseudo *
               </label>
               <input
@@ -566,7 +600,7 @@ const Users: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                 Email *
               </label>
               <input
@@ -584,7 +618,7 @@ const Users: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                 Nouveau mot de passe (laisser vide pour ne pas changer)
               </label>
               <input
@@ -602,7 +636,7 @@ const Users: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: 'black' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                 Rôle *
               </label>
               <select
