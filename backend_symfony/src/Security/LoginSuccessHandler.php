@@ -17,6 +17,15 @@ class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
     {
         $user = $token->getUser();
 
+        // Récupère le paramètre rememberMe de la requête
+        $data = json_decode($request->getContent(), true);
+        $rememberMe = isset($data['rememberMe']) ? (bool)$data['rememberMe'] : false;
+
+        // Détermine la durée du token selon rememberMe
+        // Si rememberMe = true : 24 heures
+        // Si rememberMe = false : 1 heure (session courte)
+        $tokenDuration = $rememberMe ? 86400 : 3600;
+
         // Génère un token JWT
         $header = ['alg' => 'HS256', 'typ' => 'JWT'];
         $payload = [
@@ -24,7 +33,8 @@ class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
             'email' => $user->getEmail(),
             'roles' => $user->getRoles(),
             'iat' => time(),
-            'exp' => time() + 86400, // 24 heures de validité
+            'exp' => time() + $tokenDuration,
+            'rememberMe' => $rememberMe, // Ajout du flag pour référence
         ];
         $secret = 'LeTokenDoitEtreSecretNestPasGregoire?';
 

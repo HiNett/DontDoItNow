@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AdminNav from '../../components/AdminNav';
+import { getAuthToken, removeAuthToken } from '../../utils/auth';
 
 type Priorite = {
   id: number;
@@ -21,7 +22,7 @@ const Priorite: React.FC = () => {
   const [createFormData, setCreateFormData] = useState({ label: '' });
 
   const fetchPriorite = () => {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     
     if (!token) {
       setError('Non authentifié. Veuillez vous connecter.');
@@ -39,7 +40,7 @@ const Priorite: React.FC = () => {
       .then(async (res) => {
         if (!res.ok) {
           if (res.status === 401) {
-            localStorage.removeItem('authToken');
+            removeAuthToken();
             throw new Error('Session expirée. Veuillez vous reconnecter.');
           }
           const text = await res.text();
@@ -94,7 +95,7 @@ const Priorite: React.FC = () => {
   };
 
   const handleCreatePriorite = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       alert('Non authentifié');
       return;
@@ -139,7 +140,7 @@ const Priorite: React.FC = () => {
   const handleUpdatePriorite = async () => {
     if (!editingPriorite) return;
 
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       alert('Non authentifié');
       return;
@@ -179,7 +180,7 @@ const Priorite: React.FC = () => {
       return;
     }
 
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       alert('Non authentifié');
       return;

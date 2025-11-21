@@ -1,27 +1,29 @@
 import React from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { removeAuthToken } from "../utils/auth";
 
 const LogoutBoutton: React.FC = () => {
     const navigate = useNavigate();
     const handleLogout = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Nettoyer le token localement
+        removeAuthToken();
+        
+        // Appeler l'API de logout (optionnel)
         axios.post("http://127.0.0.1:8000/api/logout")
             .then((response) => {
                 if (response.status === 200) {
                     console.log("Logout successful");
-                    navigate("/login");
                 }
             })
             .catch((error) => {
-                if (error.response && error.response.data) {
-                    const errorMessage = error.response.data.message || error.response.data.error || 'Mauvais identifiant';
-                    console.log("Erreur:", errorMessage);
-                    alert(errorMessage);
-                } else {
-                    console.log("Erreur:", error.message);
-                    alert("Erreur de connexion");
-                }
+                console.log("Erreur lors de la déconnexion:", error.message);
+            })
+            .finally(() => {
+                // Rediriger vers login dans tous les cas
+                navigate("/login");
             });
     };
 

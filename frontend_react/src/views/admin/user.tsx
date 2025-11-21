@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AdminNav from '../../components/AdminNav';
+import { getAuthToken, removeAuthToken } from '../../utils/auth';
 
 type User = {
   id: number;
@@ -23,7 +24,7 @@ const Users: React.FC = () => {
   const [createFormData, setCreateFormData] = useState({ pseudo: '', email: '', password: '', role: '0' });
 
   const fetchUsers = () => {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     
     if (!token) {
       setError('Non authentifié. Veuillez vous connecter.');
@@ -41,7 +42,7 @@ const Users: React.FC = () => {
       .then(async (res) => {
         if (!res.ok) {
           if (res.status === 401) {
-            localStorage.removeItem('authToken');
+            removeAuthToken();
             throw new Error('Session expirée. Veuillez vous reconnecter.');
           }
           const text = await res.text();
@@ -99,7 +100,7 @@ const Users: React.FC = () => {
   };
 
   const handleCreateUser = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       alert('Non authentifié');
       return;
@@ -147,7 +148,7 @@ const Users: React.FC = () => {
   const handleUpdateUser = async () => {
     if (!editingUser) return;
 
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       alert('Non authentifié');
       return;
@@ -196,7 +197,7 @@ const Users: React.FC = () => {
       return;
     }
 
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) {
       alert('Non authentifié');
       return;

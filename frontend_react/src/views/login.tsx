@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { setAuthToken } from "../utils/auth";
 import "../template.css";
 import Button from "@mui/material/Button";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -32,11 +33,17 @@ const LoginPage: React.FC = () => {
         if (response.status === 200) {
           console.log("Login successful");
           console.log("Response data:", response.data);
-          // Stocker le token dans localStorage
+          
+          // Stocker le token selon le choix rememberMe
           if (response.data.token) {
-            localStorage.setItem("authToken", response.data.token);
+            setAuthToken(response.data.token, rememberMe);
+            if (rememberMe) {
+              console.log("Token stored in localStorage (24h)");
+            } else {
+              console.log("Token stored in sessionStorage (session uniquement)");
+            }
             console.log(
-              "Token stored:",
+              "Token:",
               response.data.token.substring(0, 50) + "..."
             );
           } else {
