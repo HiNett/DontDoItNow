@@ -383,7 +383,7 @@ const Tasks: React.FC = () => {
           📋 Gestion des Tâches
         </h1>
 
-        <SearchBar onSearch={handleSearch} />
+        <SearchBar onSearch={handleSearch}/>
 
         {tasks.length === 0 ? (
           <div style={{
@@ -401,13 +401,11 @@ const Tasks: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div style={{ 
-            backgroundColor: '#252930',
-            borderRadius: '12px',
-            border: '1px solid #2d3139',
-            overflow: 'hidden'
+          <div style={{    
+            overflow: 'hidden', 
+            width: '100%'
           }}>
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto', margin:'auto',width: '100%' ,backgroundColor: '#252930',border: '1px solid #2d3139',borderRadius: '12px',}}>
               <table style={{ 
                 width: '100%', 
                 borderCollapse: 'collapse'

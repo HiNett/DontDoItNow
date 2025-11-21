@@ -238,54 +238,159 @@ const Users: React.FC = () => {
           fontWeight: '600',
           color: '#e8eaed',
           marginBottom: '30px'
-        }}>Utilisateurs</h1>
-        <button 
-          style={{ cursor: 'pointer', marginBottom: '20px' }}
-          onClick={openCreateModal}
-        >
-          Nouvel Utilisateur
-        </button>
-        {users.length === 0 ? (
-          <div>Pas d'utilisateurs trouvés.</div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <tbody>
-            {users.map((user) => (
-              <tr key={user.id} style={{ marginBottom: '1rem' }}>
-                <td><strong>{user.pseudo}</strong></td>
-                <td>{user.email}</td>
-                <td>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    backgroundColor: user.roles.includes('ROLE_ADMIN') ? '#dc3545' : '#28a745',
-                    color: 'white',
-                    fontSize: '0.85em'
-                  }}>
-                    {user.roles.includes('ROLE_ADMIN') ? 'Admin' : 'User'}
-                  </span>
-                </td>
-                <td>
-                  <button 
-                    onClick={() => openEditModal(user)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Modifier
-                  </button>
-                </td>
-                <td>
-                  <button 
-                    onClick={() => handleDeleteUser(user.id)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    Supprimer
-                  </button>
-                </td>
-              </tr>
-            ))}
-            </tbody>
-          </table>
+        }}>
+          👥 Gestion des utilisateurs
+        </h1>
 
+        {users.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            backgroundColor: '#252930',
+            borderRadius: '12px',
+            border: '1px solid #2d3139'
+          }}>
+          </div>
+        ) : (
+          <div style={{    
+            overflow: 'hidden', 
+            width: '100%'
+          }}>
+            <div style={{ overflowX: 'auto',width: '70%' ,backgroundColor: '#252930',border: '1px solid #2d3139',borderRadius: '12px',}}>
+              <table style={{ 
+                width: '100%', 
+                borderCollapse: 'collapse'
+              }}>
+                <thead>
+                  <tr style={{ 
+                    backgroundColor: '#2d3139',
+                    borderBottom: '2px solid #3a3f4b'
+                  }}>
+                    <th style={{ 
+                      padding: '16px',
+                      textAlign: 'left',
+                      fontWeight: '600',
+                      color: '#8b93a1',
+                      fontSize: '0.85em',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>👤 Pseudo</th>
+                    <th style={{ 
+                      padding: '16px',
+                      textAlign: 'left',
+                      fontWeight: '600',
+                      color: '#8b93a1',
+                      fontSize: '0.85em',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      minWidth: '220px'
+                    }}>✉️ Email</th>
+                    <th style={{ 
+                      padding: '16px',
+                      textAlign: 'left',
+                      fontWeight: '600',
+                      color: '#8b93a1',
+                      fontSize: '0.85em',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      minWidth: '300px'
+                    }}>👤 Role</th>
+                    <th style={{ 
+                      padding: '16px',
+                      textAlign: 'center',
+                      fontWeight: '600',
+                      color: '#8b93a1',
+                      fontSize: '0.85em',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      minWidth: '180px'
+                    }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} style={{ marginBottom: '1rem' }}>
+                      <td><strong>{user.pseudo}</strong></td>
+                      <td>{user.email}</td>
+                      <td>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: user.roles.includes('ROLE_ADMIN') ? '#dc3545' : '#28a745',
+                          color: 'white',
+                          fontSize: '0.85em'
+                        }}>
+                          {user.roles.includes('ROLE_ADMIN') ? 'Admin' : 'User'}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button 
+                            onClick={() => openEditModal(user)}
+                            style={{
+                              flex: 1,
+                              padding: '7px 10px',
+                              fontSize: '0.8em',
+                              border: 'none',
+                              borderRadius: '6px',
+                              backgroundColor: '#9b59b6',
+                              color: 'white',
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                              transition: 'all 0.2s',
+                              boxShadow: '0 2px 4px rgba(155, 89, 182, 0.2)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#8e44ad';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(155, 89, 182, 0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#9b59b6';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(155, 89, 182, 0.2)';
+                            }}
+                            title="Modifier"
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteUser(user.id)}
+                            style={{
+                              flex: 1,
+                              padding: '7px 10px',
+                              fontSize: '0.8em',
+                              border: 'none',
+                              borderRadius: '6px',
+                              backgroundColor: '#e74c3c',
+                              color: 'white',
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                              transition: 'all 0.2s',
+                              boxShadow: '0 2px 4px rgba(231, 76, 60, 0.2)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#c0392b';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(231, 76, 60, 0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#e74c3c';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(231, 76, 60, 0.2)';
+                            }}
+                            title="Supprimer définitivement"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </div>
 
