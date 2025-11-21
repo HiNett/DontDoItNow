@@ -50,6 +50,17 @@ const Tasks: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [currentSearchQuery, setCurrentSearchQuery] = useState('');
   
+  // Filtres
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedPriority, setSelectedPriority] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all'); // 'all', 'active', 'archived'
+
+
+  
+  // Catégories et priorités
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [priorities, setPriorities] = useState<Priority[]>([]);
+  
   // Pour le modal d'édition
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -105,8 +116,52 @@ const Tasks: React.FC = () => {
       });
   };
 
+  const fetchCategories = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/categories', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  };
+
+  const fetchPriorities = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/priorities', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPriorities(data);
+      }
+    } catch (err) {
+      console.error('Error fetching priorities:', err);
+    }
+  };
+
   useEffect(() => {
     fetchTasks();
+    fetchCategories();
+    fetchPriorities();
   }, []);
 
   const handleSearch = async (query: string) => {
@@ -341,6 +396,54 @@ const Tasks: React.FC = () => {
     return String(value);
   };
 
+  // Appliquer les filtres
+  const filteredTasks = React.useMemo(() => {
+    // S'assurer que tasks est un tableau
+    const tasksArray = Array.isArray(tasks) ? tasks : [];
+
+    return tasksArray.filter(task => {
+      // Filtre par catégorie
+      if (selectedCategory) {
+        if (selectedCategory === 'none') {
+          // Sans catégorie
+          if (task.category !== null) {
+            return false;
+          }
+        } else {
+          // Catégorie spécifique
+          if (!task.category || task.category.id.toString() !== selectedCategory) {
+            return false;
+          }
+        }
+      }
+
+      // Filtre par priorité
+      if (selectedPriority) {
+        if (selectedPriority === 'none') {
+          // Sans priorité
+          if (task.priority !== null) {
+            return false;
+          }
+        } else {
+          // Priorité spécifique
+          if (!task.priority || task.priority.id.toString() !== selectedPriority) {
+            return false;
+          }
+        }
+      }
+
+      // Filtre par statut (archivé/actif)
+      if (selectedStatus === 'active' && task.isArchived) {
+        return false;
+      }
+      if (selectedStatus === 'archived' && !task.isArchived) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [tasks, selectedCategory, selectedPriority, selectedStatus]);
+
   if (loading) return (
     <div style={{ 
       display: 'flex', 
@@ -383,9 +486,164 @@ const Tasks: React.FC = () => {
           📋 Gestion des Tâches
         </h1>
 
-        <SearchBar onSearch={handleSearch}/>
+        {/* Barre de recherche et filtres */}
+        <div style={{
+          display: 'flex',
+          gap: '15px',
+          marginBottom: '25px',
+          alignItems: 'flex-start'
+        }}>
+          <div style={{ flex: 1 }}>
+            <SearchBar onSearch={handleSearch}/>
+          </div>
+          
+          {/* Filtres */}
+          <div style={{
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center'
+          }}>
+            {/* Filtre par catégorie */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              style={{
+                padding: '14px 20px',
+                fontSize: '0.95em',
+                border: '2px solid #2d3139',
+                borderRadius: '12px',
+                backgroundColor: '#252930',
+                color: '#e8eaed',
+                outline: 'none',
+                cursor: 'pointer',
+                minWidth: '180px',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#3498db';
+                e.target.style.boxShadow = '0 4px 12px rgba(52, 152, 219, 0.3)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#2d3139';
+                e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+              }}
+            >
+              <option value="">🏷️ Toutes les catégories</option>
+              <option value="none">📝 Sans catégorie</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id.toString()}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
 
-        {tasks.length === 0 ? (
+            {/* Filtre par priorité */}
+            <select
+              value={selectedPriority}
+              onChange={(e) => setSelectedPriority(e.target.value)}
+              style={{
+                padding: '14px 20px',
+                fontSize: '0.95em',
+                border: '2px solid #2d3139',
+                borderRadius: '12px',
+                backgroundColor: '#252930',
+                color: '#e8eaed',
+                outline: 'none',
+                cursor: 'pointer',
+                minWidth: '180px',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#3498db';
+                e.target.style.boxShadow = '0 4px 12px rgba(52, 152, 219, 0.3)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#2d3139';
+                e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+              }}
+            >
+              <option value="">⚡ Toutes les priorités</option>
+              <option value="none">📝 Sans priorité</option>
+              {priorities.map((priority) => (
+                <option key={priority.id} value={priority.id.toString()}>
+                  ⚡ {priority.label}
+                </option>
+              ))}
+            </select>
+
+            {/* Filtre par statut */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              style={{
+                padding: '14px 20px',
+                fontSize: '0.95em',
+                border: '2px solid #2d3139',
+                borderRadius: '12px',
+                backgroundColor: '#252930',
+                color: '#e8eaed',
+                outline: 'none',
+                cursor: 'pointer',
+                minWidth: '150px',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#3498db';
+                e.target.style.boxShadow = '0 4px 12px rgba(52, 152, 219, 0.3)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#2d3139';
+                e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+              }}
+            >
+              <option value="all">📊 Tous les statuts</option>
+              <option value="active">✅ Actives</option>
+              <option value="archived">📦 Archivées</option>
+            </select>
+
+            {/* Bouton pour réinitialiser les filtres */}
+            {(selectedCategory || selectedPriority || selectedStatus !== 'all') && (
+              <button
+                onClick={() => {
+                  setSelectedCategory('');
+                  setSelectedPriority('');
+                  setSelectedStatus('all');
+                }}
+                style={{
+                  padding: '14px 20px',
+                  fontSize: '0.95em',
+                  border: '2px solid #2d3139',
+                  borderRadius: '12px',
+                  backgroundColor: '#1e2127',
+                  color: '#8b93a1',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#3a3f4b';
+                  e.currentTarget.style.color = '#e8eaed';
+                  e.currentTarget.style.backgroundColor = '#252930';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#2d3139';
+                  e.currentTarget.style.color = '#8b93a1';
+                  e.currentTarget.style.backgroundColor = '#1e2127';
+                }}
+              >
+                <span>🔄</span>
+                <span>Réinitialiser</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {filteredTasks.length === 0 ? (
           <div style={{
             textAlign: 'center',
             padding: '60px 20px',
@@ -397,7 +655,9 @@ const Tasks: React.FC = () => {
               {isSearching ? '🔍' : '📭'}
             </div>
             <div style={{ fontSize: '1.1em', color: '#8b93a1' }}>
-              {isSearching ? 'Aucun résultat trouvé pour votre recherche' : 'Aucune tâche trouvée'}
+              {isSearching || selectedCategory || selectedPriority || selectedStatus !== 'all'
+                ? 'Aucune tâche ne correspond à vos critères de recherche/filtrage'
+                : 'Aucune tâche trouvée'}
             </div>
           </div>
         ) : (
@@ -484,7 +744,7 @@ const Tasks: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                {tasks.map((task, index) => (
+                {filteredTasks.map((task, index) => (
                   <tr key={task.id} style={{ 
                     borderBottom: '1px solid #2d3139',
                     backgroundColor: index % 2 === 0 ? '#252930' : '#1e2127',
