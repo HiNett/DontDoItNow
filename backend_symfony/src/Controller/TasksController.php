@@ -31,7 +31,7 @@ final class TasksController extends AbstractController
 
     #[Route('/api/tasks', name: 'tasks_list', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function list(UsersTasksRepository $usersTasksRepository): JsonResponse
+    public function list(TasksRepository $tasksRepository): JsonResponse
     {
         try {
             $user = $this->getUser();
@@ -40,8 +40,16 @@ final class TasksController extends AbstractController
                 return $this->json(['error' => 'Utilisateur non authentifié'], 401);
             }
 
-            // Récupérer les tâches de l'utilisateur via le repository UsersTasks
-            $tasks = $usersTasksRepository->findTasksByUser($user);
+            // Récupérer uniquement les tâches non archivées de l'utilisateur
+            $tasks = $tasksRepository->createQueryBuilder('t')
+                ->leftJoin('t.usersTasks', 'ut')
+                ->where('ut.user = :user')
+                ->andWhere('t.isArchived = :archived')
+                ->setParameter('user', $user)
+                ->setParameter('archived', false)
+                ->orderBy('t.id', 'DESC')
+                ->getQuery()
+                ->getResult();
 
             $data = array_map(static function (TaskEntity $task): array {
                 return [
@@ -74,7 +82,7 @@ final class TasksController extends AbstractController
 
     #[Route('/api/tasks/search', name: 'tasks_search_user', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function searchUserTasks(Request $request, UsersTasksRepository $usersTasksRepository): JsonResponse
+    public function searchUserTasks(Request $request, TasksRepository $tasksRepository): JsonResponse
     {
         try {
             $user = $this->getUser();
@@ -89,36 +97,21 @@ final class TasksController extends AbstractController
                 return $this->json([]);
             }
 
-            // Récupérer toutes les tâches de l'utilisateur
-            $userTasks = $usersTasksRepository->findTasksByUser($user);
-
-            // Filtrer les tâches selon la recherche
-            $filteredTasks = array_filter($userTasks, function (TaskEntity $task) use ($query) {
-                $queryLower = strtolower(trim($query));
-                
-                // Recherche dans le nom (insensible à la casse)
-                $nameMatch = stripos($task->getName(), $query) !== false;
-                
-                // Recherche dans la description (si elle existe)
-                $descriptionMatch = false;
-                if ($task->getDescription() !== null && $task->getDescription() !== '') {
-                    $descriptionMatch = stripos($task->getDescription(), $query) !== false;
-                }
-                
-                // Recherche dans la catégorie (si elle existe)
-                $categoryMatch = false;
-                if ($task->getCategory() !== null) {
-                    $categoryMatch = stripos($task->getCategory()->getLabel(), $query) !== false;
-                }
-                
-                // Recherche dans la priorité (si elle existe)
-                $priorityMatch = false;
-                if ($task->getPriority() !== null) {
-                    $priorityMatch = stripos($task->getPriority()->getLabel(), $query) !== false;
-                }
-                
-                return $nameMatch || $descriptionMatch || $categoryMatch || $priorityMatch;
-            });
+            // Recherche dans la base de données avec QueryBuilder (comme pour les admins)
+            $tasks = $tasksRepository->createQueryBuilder('t')
+                ->leftJoin('t.usersTasks', 'ut')
+                ->leftJoin('t.category', 'c')
+                ->leftJoin('t.priority', 'p')
+                ->where('ut.user = :user')
+                ->andWhere('t.isArchived = :archived')
+                ->andWhere('(t.name LIKE :query OR t.description LIKE :query OR c.label LIKE :query OR p.label LIKE :query)')
+                ->setParameter('user', $user)
+                ->setParameter('archived', false)
+                ->setParameter('query', '%' . $query . '%')
+                ->orderBy('t.id', 'DESC')
+                ->setMaxResults(50)
+                ->getQuery()
+                ->getResult();
 
             $data = array_map(static function (TaskEntity $task): array {
                 return [
@@ -137,7 +130,7 @@ final class TasksController extends AbstractController
                         'label' => $task->getPriority()->getLabel(),
                     ] : null,
                 ];
-            }, $filteredTasks);
+            }, $tasks);
 
             return $this->json($data);
         } catch (\Exception $e) {
