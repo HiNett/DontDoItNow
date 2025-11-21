@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import SearchBar from '../components/SearchBar';
+import { DateTime } from 'luxon';
 
 type Task = {
   id: number;
@@ -873,11 +874,11 @@ const Tasks: React.FC = () => {
                           {task.dueDate ? (
                             <div style={{
                               fontSize: '0.85em',
-                              color: '#ff6b6b',
                               display: 'flex',
                               alignItems: 'center',
                               gap: '6px',
-                              backgroundColor: 'rgba(255, 107, 107, 0.15)',
+                              backgroundColor:new Date(task.dueDate).toLocaleDateString('fr-FR') < DateTime.now().toLocaleString(DateTime.DATE_FULL) ? '#c20000ff' : '#008f3bff',
+                              color: 'white',
                               padding: '4px 10px',
                               borderRadius: '6px'
                             }}>
