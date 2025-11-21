@@ -108,6 +108,11 @@ final class PrioritiesController extends AbstractController
             return $this->json(['error' => 'Priority not found'], 404);
         }
 
+        // Mettre à null la priorité des tâches associées
+        foreach ($priority->getTasks() as $task) {
+            $task->setPriority(null);
+        }
+
         $em->remove($priority);
         $em->flush();
 

@@ -213,8 +213,15 @@ const Users: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la suppression');
+        // Essayer de parser la réponse en JSON
+        let errorMessage = 'Erreur lors de la suppression';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       console.log('User deleted');
@@ -389,30 +396,42 @@ const Users: React.FC = () => {
                             ✏️
                           </button>
                           <button 
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => {
+                              if (user.roles.includes('ROLE_ADMIN')) {
+                                alert('Impossible de supprimer un administrateur depuis l\'interface. Veuillez utiliser la base de données directement.');
+                              } else {
+                                handleDeleteUser(user.id);
+                              }
+                            }}
+                            disabled={user.roles.includes('ROLE_ADMIN')}
                             style={{
                               padding: '7px 20px',
                               fontSize: '0.8em',
                               border: 'none',
                               borderRadius: '6px',
-                              backgroundColor: '#e74c3c',
+                              backgroundColor: user.roles.includes('ROLE_ADMIN') ? '#6c757d' : '#e74c3c',
                               color: 'white',
-                              cursor: 'pointer',
+                              cursor: user.roles.includes('ROLE_ADMIN') ? 'not-allowed' : 'pointer',
                               fontWeight: '500',
                               transition: 'all 0.2s',
-                              boxShadow: '0 2px 4px rgba(231, 76, 60, 0.2)'
+                              boxShadow: '0 2px 4px rgba(231, 76, 60, 0.2)',
+                              opacity: user.roles.includes('ROLE_ADMIN') ? 0.5 : 1
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#c0392b';
-                              e.currentTarget.style.transform = 'translateY(-1px)';
-                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(231, 76, 60, 0.3)';
+                              if (!user.roles.includes('ROLE_ADMIN')) {
+                                e.currentTarget.style.backgroundColor = '#c0392b';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(231, 76, 60, 0.3)';
+                              }
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#e74c3c';
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(231, 76, 60, 0.2)';
+                              if (!user.roles.includes('ROLE_ADMIN')) {
+                                e.currentTarget.style.backgroundColor = '#e74c3c';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(231, 76, 60, 0.2)';
+                              }
                             }}
-                            title="Supprimer définitivement"
+                            title={user.roles.includes('ROLE_ADMIN') ? "Impossible de supprimer un administrateur" : "Supprimer définitivement"}
                           >
                             🗑️
                           </button>
@@ -522,8 +541,10 @@ const Users: React.FC = () => {
                 }}
               >
                 <option value="0">Utilisateur</option>
-                <option value="1">Administrateur</option>
               </select>
+              <small style={{ color: '#8b93a1', fontSize: '0.85em', display: 'block', marginTop: '5px' }}>
+                Note : Les administrateurs doivent être créés directement dans la base de données.
+              </small>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -643,16 +664,28 @@ const Users: React.FC = () => {
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                disabled={editingUser?.roles.includes('ROLE_ADMIN')}
                 style={{
                   width: '100%',
                   padding: '8px',
                   border: '1px solid #ccc',
-                  borderRadius: '4px'
+                  borderRadius: '4px',
+                  opacity: editingUser?.roles.includes('ROLE_ADMIN') ? 0.6 : 1,
+                  cursor: editingUser?.roles.includes('ROLE_ADMIN') ? 'not-allowed' : 'pointer'
                 }}
               >
                 <option value="0">Utilisateur</option>
-                <option value="1">Administrateur</option>
+                {editingUser?.roles.includes('ROLE_ADMIN') && <option value="1">Administrateur</option>}
               </select>
+              {editingUser?.roles.includes('ROLE_ADMIN') ? (
+                <small style={{ color: '#8b93a1', fontSize: '0.85em', display: 'block', marginTop: '5px' }}>
+                  Le rôle d'un administrateur ne peut pas être modifié depuis l'interface.
+                </small>
+              ) : (
+                <small style={{ color: '#8b93a1', fontSize: '0.85em', display: 'block', marginTop: '5px' }}>
+                  Note : Les administrateurs doivent être créés directement dans la base de données.
+                </small>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>

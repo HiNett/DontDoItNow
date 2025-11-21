@@ -196,8 +196,15 @@ const Priorite: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la suppression');
+        // Essayer de parser la réponse en JSON
+        let errorMessage = 'Erreur lors de la suppression';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       console.log('Priorite deleted');
@@ -267,6 +274,13 @@ const Priorite: React.FC = () => {
             borderRadius: '12px',
             border: '1px solid #2d3139'
           }}>
+            <div style={{ fontSize: '3em', marginBottom: '20px' }}>⚡</div>
+            <h3 style={{ color: '#e8eaed', marginBottom: '10px', fontSize: '1.3em' }}>
+              Aucune priorité
+            </h3>
+            <p style={{ color: '#8b93a1', fontSize: '0.95em' }}>
+              Commencez par créer une priorité pour mieux gérer vos tâches.
+            </p>
           </div>
         ) : (
           <div style={{    
